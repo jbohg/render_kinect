@@ -7,6 +7,8 @@ This C++ project implements the Kinect sensor model as described in
 
 and as implemented in python as a Blender plugin. For more information, check out [the BlenSor Webpage](http://www.blensor.org)
 
+This is a simplified version of this simulation accepting only a single rigid object.
+
 Requirements
 ----------
 The following libraries are required to compile the code:
