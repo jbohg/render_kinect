@@ -40,9 +40,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#ifdef HAVE_OPENMP
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/io/pcd_io.h>
+#ifdef HAVE_PCL
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
 #endif 
 
 #include <string.h>
