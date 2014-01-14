@@ -43,4 +43,4 @@ cd bin
 This should store a number of depth and labeled images in /tmp. If you have PCL installed, it also stores point clouds as pcl files.
 
 Point clouds generated from a simulated kinect measurement taken from a wheel in 10 different poses.
-![](https://github.com/jbohg/render_kinect/blob/master/data/Wheels.png)
+![](data/Wheels.png?raw=true)
