@@ -3,9 +3,9 @@ Simulation of Kinect Measurements
 
 This C++ project implements the Kinect sensor model as described in 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**BlenSor: Blender Sensor Simulation Toolbox.**
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Gschwandtner, Michael and Kwitt, Roland and Uhl, Andreas and Pree, Wolfgang.*
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*In Advances in Visual Computing. Lecture Notes in Computer Science. pp 199--208. 2011.*
+**BlenSor: Blender Sensor Simulation Toolbox.**
+*Gschwandtner, Michael and Kwitt, Roland and Uhl, Andreas and Pree, Wolfgang.*
+*In Advances in Visual Computing. Lecture Notes in Computer Science. pp 199--208. 2011.*
 
 and as implemented in python as a Blender plugin ([BlenSor Webpage](http://www.blensor.org)).
 
