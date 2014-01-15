@@ -5,9 +5,11 @@ This C++ project implements the Kinect sensor model as described in
 
    BlenSor: Blender Sensor Simulation Toolbox Advances in Visual Computing. Gschwandtner, Michael and Kwitt, Roland and Uhl, Andreas and Pree, Wolfgang. In Lecture Notes in Computer Science. pp 199--208. 2011. 
 
-and as implemented in python as a Blender plugin. For more information, check out [the BlenSor Webpage](http://www.blensor.org)
+and as implemented in python as a Blender plugin ([BlenSor Webpage](http://www.blensor.org)).
 
-This is a simplified version of this simulation accepting only a single rigid object.
+The simulated measurement shows typical artifacts of a kinect, e.g., occlusion boundaries due to distance between IR projector and IR camera, 8 bit quantisation, smooting within a 9x9 pixel correlation window. This implementation also includes options for adding either Gaussian, Perlin or Simplex noise.
+
+This implementation is simplified in that it accepts only a single rigid object as input.
 
 Requirements
 ----------
