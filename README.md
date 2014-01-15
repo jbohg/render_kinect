@@ -3,7 +3,7 @@ Simulation of Kinect Measurements
 
 This C++ project implements the Kinect sensor model as described in 
 
-   BlenSor: Blender Sensor Simulation Toolbox Advances in Visual Computing. Gschwandtner, Michael and Kwitt, Roland and Uhl, Andreas and Pree, Wolfgang. In Lecture Notes in Computer Science. pp 199--208. 2011. 
+   **BlenSor: Blender Sensor Simulation Toolbox Advances in Visual Computing.** *Gschwandtner, Michael and Kwitt, Roland and Uhl, Andreas and Pree, Wolfgang. In Lecture Notes in Computer Science. pp 199--208. 2011.* 
 
 and as implemented in python as a Blender plugin ([BlenSor Webpage](http://www.blensor.org)).
 
@@ -46,5 +46,5 @@ cd bin
 
 This should store a number of depth and labeled images in /tmp. If you have PCL installed, it also stores point clouds as pcl files.
 
-Point clouds generated from a simulated kinect measurement taken from a wheel in 10 different poses.
+Point clouds generated from a simulated kinect measurement taken from a wheel in 10 slightly different poses. This measurement does not expose additional noise.
 ![](data/Wheels.png?raw=true)

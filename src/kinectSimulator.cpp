@@ -81,6 +81,7 @@ namespace render_kinect {
     : camera_( p_camera_info)
     , noise_type_(p_camera_info.noise_)
     , noise_gen_(NULL)
+    , noisy_labels_(0)
   {
     
     std::cout << "Width and Height: " << p_camera_info.width << "x"
@@ -97,7 +98,12 @@ namespace render_kinect {
 
     // reading dot pattern for filtering of disparity image
     dot_pattern_ = cv::imread(dot_path.c_str(), 0);
-
+    if(! dot_pattern_.data ) // Check for invalid input
+      {
+	std::cout <<  "Could not load dot pattern from " <<  dot_path << std::endl ;
+	exit(-1);
+      }
+    
     // initialize filter matrices for simulated disparity
     weights_ = cv::Mat(size_filt_,size_filt_,CV_32FC1);
     for(int x=0; x<size_filt_; ++x){
@@ -294,7 +300,8 @@ namespace render_kinect {
     // Filter disparity image and add noise 
     cv::Mat out_disp, out_labels;
     filterDisp(disp, labels, out_disp, out_labels);
-    labels = out_labels;
+    if(noisy_labels_)
+      labels = out_labels;
 
     //Go over disparity image and recompute depth map and point cloud after filtering and adding noise etc
     for(int r=0; r<camera_.getHeight(); ++r) {
@@ -343,8 +350,10 @@ namespace render_kinect {
     // initialise output arrays
     out_disp = cv::Mat(disp.rows, disp.cols, disp.type());
     out_disp.setTo(invalid_disp_);
-    out_labels = cv::Mat(labels.rows, labels.cols, labels.type());
-    out_labels.setTo(background_);
+    if(noisy_labels_){
+      out_labels = cv::Mat(labels.rows, labels.cols, labels.type());
+      out_labels.setTo(background_);
+    }
 
     // determine filter boundaries
     unsigned lim_rows = std::min(camera_.getHeight()-size_filt_, dot_pattern_.rows-size_filt_);
@@ -352,11 +361,15 @@ namespace render_kinect {
     int center = size_filt_/2.0;
     for(unsigned r=0; r<lim_rows; ++r) {
       const float* disp_i = disp.ptr<float>(r+center);
-      const unsigned char* labels_i = labels.ptr<unsigned char>(r+center);
+      const unsigned char* labels_i;
+      if(noisy_labels_)
+	labels_i = labels.ptr<unsigned char>(r+center);
       const float* dots_i = dot_pattern_.ptr<float>(r+center);
       
       float* out_disp_i = out_disp.ptr<float>(r+center);
-      unsigned char* out_labels_i = out_labels.ptr<unsigned char>(r+center);
+      unsigned char* out_labels_i;
+      if(noisy_labels_)
+	out_labels_i = out_labels.ptr<unsigned char>(r+center);
       
       float* noise_i =  noise_field.ptr<float>((int)((r+center)/noise_smooth));
       
@@ -393,28 +406,34 @@ namespace render_kinect {
 	      float accu = window.at<float>(center,center);
 	      assert(accu<invalid_disp_);
 	      out_disp_i[c + center] = round((accu + noise_i[(int)((c+center)/noise_smooth)])*8.0)/8.0;
-	      if(out_disp_i[c + center]<invalid_disp_)
-		for(int col=0; col<3; ++col)
-		  out_labels_i[(c + center)*3+col] = labels_i[(c+center)*3+col];
+	      if(noisy_labels_) {
+		if(out_disp_i[c + center]<invalid_disp_)
+		  for(int col=0; col<3; ++col)
+		    out_labels_i[(c + center)*3+col] = labels_i[(c+center)*3+col];
+	      }
 	      
 	      cv::Mat interpolation_window = interpolation_map(roi);
 	      cv::Mat disp_data_window = out_disp(roi);
-	      cv::Mat label_data_window = out_labels(roi);
+	      cv::Mat label_data_window;
+	      if(noisy_labels_)
+		label_data_window = out_labels(roi);
 	      cv::Mat substitutes = interpolation_window < fill_weights_;
 	      fill_weights_.copyTo( interpolation_window, substitutes);
 	      disp_data_window.setTo(out_disp_i[c + center], substitutes);
 	      
-	      
-	      for(int sr=0;sr<substitutes.rows; ++sr){
-		unsigned char* subs_i = substitutes.ptr<unsigned char>(sr);
-		unsigned char* label_win_i = label_data_window.ptr<unsigned char>(sr);
-		for(int sc=0;sc<substitutes.cols; ++sc){
-		  if(subs_i[sc]>0 && out_disp_i[c + center] < invalid_disp_){
-		    for(int col=0; col<3; ++col)
-		      label_win_i[sc*3+col] = out_labels_i[(c + center)*3+col]; 
+	      if(noisy_labels_) {
+		for(int sr=0;sr<substitutes.rows; ++sr){
+		  unsigned char* subs_i = substitutes.ptr<unsigned char>(sr);
+		  unsigned char* label_win_i = label_data_window.ptr<unsigned char>(sr);
+		  for(int sc=0;sc<substitutes.cols; ++sc){
+		    if(subs_i[sc]>0 && out_disp_i[c + center] < invalid_disp_){
+		      for(int col=0; col<3; ++col)
+			label_win_i[sc*3+col] = out_labels_i[(c + center)*3+col]; 
+		    }
 		  }
 		}
 	      }
+
 	    }
 	  } 
 	}

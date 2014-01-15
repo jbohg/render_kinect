@@ -91,6 +91,9 @@ namespace render_kinect
     std::string dot_path_;
     cv::Mat dot_pattern_;    
 
+    // wether label image should overlap with the noisy depth image
+    bool noisy_labels_;
+
   public:
     
     std::vector<cv::Scalar> color_map_;
