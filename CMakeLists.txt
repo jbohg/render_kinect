@@ -28,11 +28,14 @@ if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_OMP")
 endif(OPENMP_FOUND)
 
-find_package(PCL QUIET)
+find_package(PCL 1.3 REQUIRED COMPONENTS io)
 if(PCL_FOUND)
   message("Found PCL")
-  include_directories(${PCL_INCLUDE_DIRS})
+  include_directories(${PCL_INCLUDE_DIRS} /opt/ros/fuerte/include/)
+  # in case your PCL installation is partt of ros you might need to add this include path
+  #include_directories(${PCL_INCLUDE_DIRS} /opt/ros/<ros_distro>/include/)
   set(LIBS ${LIBS} ${PCL_LIBRARIES})
+  add_definitions(${PCL_DEFINITIONS})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_PCL")
 endif(PCL_FOUND)
 
