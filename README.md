@@ -28,6 +28,9 @@ The following libraries are optional:
 
 Compilation
 ------------
+
+The compilation of this code is tested on Ubuntu (12.04 precise and 12.10 quantal). The CMakeLists.txt file might need to be slightly adapted for correctly linking against PCL dependent on whether you installed it as a standalone library or with ROS.
+
 ```
 mkdir build
 cd build

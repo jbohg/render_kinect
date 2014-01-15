@@ -12,6 +12,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #set the path for project includes
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
+# There exist different versions of the assimp library for different 
+# ubuntu distros. 
 execute_process(COMMAND lsb_release -sc 
   OUTPUT_VARIABLE _distro OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_${_distro}")
