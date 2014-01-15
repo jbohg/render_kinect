@@ -28,10 +28,10 @@ if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_OMP")
 endif(OPENMP_FOUND)
 
-find_package(PCL 1.3 REQUIRED COMPONENTS io)
+find_package(PCL 1.3 QUIET REQUIRED COMPONENTS io)
 if(PCL_FOUND)
   message("Found PCL")
-  include_directories(${PCL_INCLUDE_DIRS} /opt/ros/fuerte/include/)
+  include_directories(${PCL_INCLUDE_DIRS})
   # in case your PCL installation is partt of ros you might need to add this include path
   #include_directories(${PCL_INCLUDE_DIRS} /opt/ros/<ros_distro>/include/)
   set(LIBS ${LIBS} ${PCL_LIBRARIES})
@@ -39,8 +39,16 @@ if(PCL_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_PCL")
 endif(PCL_FOUND)
 
+find_package(OpenCV QUIET REQUIRED COMPONENTS core highgui)
+if(OpenCV_FOUND)
+  message("Found OpenCV")
+  include_directories(${OpenCV_INCLUDE_DIRS})
+  set(LIBS ${LIBS} ${OpenCV_LIBS})
+endif(OpenCV_FOUND)
+
+
 add_library(${PROJECT_NAME} src/kinectSimulator.cpp src/noiseutils.cpp)
-target_link_libraries(${PROJECT_NAME} assimp CGAL ${LIBS} noise opencv_core opencv_highgui) 
+target_link_libraries(${PROJECT_NAME} assimp CGAL noise ${LIBS}) 
 
 add_executable(render_object src/main_kinect.cpp)
 target_link_libraries(render_object ${PROJECT_NAME})
