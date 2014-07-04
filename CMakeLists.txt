@@ -9,6 +9,10 @@ set(CMAKE_BUILD_TYPE Release)
 find_package(catkin REQUIRED 
   COMPONENTS
     roslib
+    roscpp
+    message_generation
+    sensor_msgs
+    image_transport
   )
 
 # There exist different versions of the assimp library for different 
@@ -75,10 +79,10 @@ endif(OPENMP_FOUND)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  sensor_msgs  # Or other packages containing msgs
+  )
 
 ###################################
 ## catkin specific configuration ##
@@ -92,7 +96,7 @@ endif(OPENMP_FOUND)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roslib
+  CATKIN_DEPENDS roslib message_runtime image_transport roscpp
   DEPENDS OpenCV eigen 
 )
 
@@ -107,5 +111,8 @@ target_link_libraries(${PROJECT_NAME} assimp CGAL noise ${LIBS} ${catkin_LIBRARI
 
 add_executable(render_object src/main_kinect.cpp)
 target_link_libraries(render_object ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+add_executable(move_object src/move_object.cpp)
+target_link_libraries(move_object ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 

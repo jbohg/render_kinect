@@ -32,11 +32,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* main_kinect.cpp 
- * Test program that sets up simulator with specific camera parameters 
- * and object mesh. A number of object poses is sampled from which 
- * a desired measured output (depthmap, label image, point cloud) is 
- * generated and stored.
+/* move_kinect.cpp 
+ * Program publishes simulated measurements from an object moving with 
+ * bronian motion.
  */
 
 #include <render_kinect/simulate.h>
@@ -74,14 +72,15 @@ int main(int argc, char **argv)
     exit(-1);
   }
   
+  // initialize ros
+  ros::init(argc, argv, "move_object");
+
   // Get the path to the object mesh model.
   std::string path = ros::package::getPath("render_kinect");
   std::string object_models_dir = "/obj_models/";
   std::stringstream full_path;
   full_path << path << object_models_dir << argv[1];
 
-  std::cout << full_path.str() << std::endl;
-  
   // Get the path to the dot pattern
   std::string dot_path = "/data/kinect-pattern_3x3.png";
   std::stringstream full_dot_path;
@@ -117,10 +116,6 @@ int main(int argc, char **argv)
 
   // Number of samples
   int frames = 10;
-  // Flags for what output data should be generated
-  bool store_depth = 1;
-  bool store_label = 1;
-  bool store_pcd = 1;
 
   // Storage of random transform
   Eigen::Affine3d noise;
@@ -131,7 +126,7 @@ int main(int argc, char **argv)
     Eigen::Affine3d current_tf = noise*transform;
     
     // give pose and object name to renderer
-    Simulator.simulateStoreMeasurement(current_tf, store_depth, store_label, store_pcd);
+    Simulator.simulatePublishMeasurement(current_tf);
     
   }
 

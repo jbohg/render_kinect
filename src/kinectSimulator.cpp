@@ -433,7 +433,6 @@ namespace render_kinect {
 		  }
 		}
 	      }
-
 	    }
 	  } 
 	}
