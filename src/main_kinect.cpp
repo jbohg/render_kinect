@@ -42,6 +42,8 @@
 #include <render_kinect/simulate.h>
 #include <render_kinect/camera.h>
 
+#include <ros/package.h>
+
 #include <iostream>
 #include <fstream>
 
@@ -73,12 +75,17 @@ int main(int argc, char **argv)
   }
   
   // Get the path to the object mesh model.
-  std::string object_models_dir = "../obj_models/";
+  std::string path = ros::package::getPath("render_kinect");
+  std::string object_models_dir = "/obj_models/";
   std::stringstream full_path;
-  full_path << object_models_dir << argv[1];
+  full_path << path << object_models_dir << argv[1];
 
+  std::cout << full_path.str() << std::endl;
+  
   // Get the path to the dot pattern
-  std::string dot_path = "../data/kinect-pattern_3x3.png";
+  std::string dot_path = "/data/kinect-pattern_3x3.png";
+  std::stringstream full_dot_path;
+  full_dot_path << path << dot_path;
   
   // Camera Parameters
   render_kinect::CameraInfo cam_info;
@@ -106,7 +113,7 @@ int main(int argc, char **argv)
   transform.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
 
   // Kinect Simulator
-  render_kinect::Simulate Simulator(cam_info, full_path.str(), dot_path);
+  render_kinect::Simulate Simulator(cam_info, full_path.str(), full_dot_path.str());
 
   // Number of samples
   int frames = 10;

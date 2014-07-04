@@ -1,34 +1,33 @@
-cmake_minimum_required(VERSION 2.4.6)
-if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-endif(COMMAND cmake_policy)
+cmake_minimum_required(VERSION 2.8.3)
+project(render_kinect)
 
 set(CMAKE_BUILD_TYPE Release)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-#set the path for project includes
-include_directories(${PROJECT_SOURCE_DIR}/include)
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED 
+  COMPONENTS
+    roslib
+  )
 
 # There exist different versions of the assimp library for different 
 # ubuntu distros. 
 execute_process(COMMAND lsb_release -sc 
   OUTPUT_VARIABLE _distro OUTPUT_STRIP_TRAILING_WHITESPACE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_${_distro}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_${_distro} -frounding-math")
 message("Compiling for Ubuntu version ${_distro}")
 
+## System dependencies are found with CMake's conventions
 find_package(Eigen REQUIRED)
-include_directories(${EIGEN_INCLUDE_DIR})
+include_directories(${Eigen_INCLUDE_DIRS})
 
-find_package(OpenMP QUIET)
-if(OPENMP_FOUND)
-  message("Found OpenMP")
-  include_directories(${OpenMP_INCLUDE_DIRS})
-  set(LIBS ${LIBS} ${OpenMP_LIBRARIES})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_OMP")
-endif(OPENMP_FOUND)
+find_package(OpenCV QUIET REQUIRED COMPONENTS core highgui)
+if(OpenCV_FOUND)
+  message("Found OpenCV")
+  include_directories(${OpenCV_INCLUDE_DIRS})
+  set(LIBS ${LIBS} ${OpenCV_LIBS})
+endif(OpenCV_FOUND)
 
 find_package(PCL 1.3 QUIET REQUIRED COMPONENTS io)
 if(PCL_FOUND)
@@ -41,16 +40,72 @@ if(PCL_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_PCL")
 endif(PCL_FOUND)
 
-find_package(OpenCV QUIET REQUIRED COMPONENTS core highgui)
-if(OpenCV_FOUND)
-  message("Found OpenCV")
-  include_directories(${OpenCV_INCLUDE_DIRS})
-  set(LIBS ${LIBS} ${OpenCV_LIBS})
-endif(OpenCV_FOUND)
+find_package(OpenMP QUIET)
+if(OPENMP_FOUND)
+  message("Found OpenMP")
+  include_directories(${OpenMP_INCLUDE_DIRS})
+  set(LIBS ${LIBS} ${OpenMP_LIBRARIES})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_OMP")
+endif(OPENMP_FOUND)
 
+
+
+
+## Uncomment this if the package has a setup.py. This macro ensures
+## modules and global scripts declared therein get installed
+## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
+# catkin_python_setup()
+
+#######################################
+## Declare ROS messages and services ##
+#######################################
+
+## Generate messages in the 'msg' folder
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
+
+## Generate services in the 'srv' folder
+# add_service_files(
+#   FILES
+#   Service1.srv
+#   Service2.srv
+# )
+
+## Generate added messages and services with any dependencies listed here
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
+
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if you package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}
+  CATKIN_DEPENDS roslib
+  DEPENDS OpenCV eigen 
+)
+
+###########
+## Build ##
+###########
+
+include_directories(include)
 
 add_library(${PROJECT_NAME} src/kinectSimulator.cpp src/noiseutils.cpp)
-target_link_libraries(${PROJECT_NAME} assimp CGAL noise ${LIBS}) 
+target_link_libraries(${PROJECT_NAME} assimp CGAL noise ${LIBS} ${catkin_LIBRARIES}) 
 
 add_executable(render_object src/main_kinect.cpp)
-target_link_libraries(render_object ${PROJECT_NAME})
+target_link_libraries(render_object ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+
