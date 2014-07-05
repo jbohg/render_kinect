@@ -90,13 +90,13 @@ int main(int argc, char **argv)
   // Camera Parameters
   render_kinect::CameraInfo cam_info;
   
-  cam_info.width = 640;
-  cam_info.height = 480;
+  cam_info.width_ = 640;
+  cam_info.height_ = 480;
   cam_info.cx_ = 320;
   cam_info.cy_ = 240;
   
-  cam_info.z_near = 0.5;
-  cam_info.z_far = 6.0;
+  cam_info.z_near_ = 0.5;
+  cam_info.z_far_ = 6.0;
   cam_info.fx_ = 580.0;
   cam_info.fy_ = 580.0;
   // baseline between IR projector and IR camera

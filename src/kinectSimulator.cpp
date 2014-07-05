@@ -84,8 +84,8 @@ namespace render_kinect {
     , noisy_labels_(0)
   {
     
-    std::cout << "Width and Height: " << p_camera_info.width << "x"
-	      << p_camera_info.height << std::endl;
+    std::cout << "Width and Height: " << p_camera_info.width_ << "x"
+	      << p_camera_info.height_ << std::endl;
     std::cout << "Loading models for objects: " << object_name << std::endl;
 
     model_ = boost::shared_ptr<ObjectMeshModel>(new ObjectMeshModel(object_name));
@@ -154,6 +154,11 @@ namespace render_kinect {
   {
     if(noise_gen_!=NULL)
       delete noise_gen_;
+  }
+
+  sensor_msgs::CameraInfoPtr KinectSimulator::getCameraInfo (ros::Time time)
+  {
+    return camera_.getCameraInfo(time);
   }
   
   // Function that exchanges current object transform

@@ -51,7 +51,6 @@
 #include <render_kinect/kinectSimulator.h>
 
 // ROS
-#include <sensor_msgs/CameraInfo.h>
 #include <image_transport/image_transport.h>
 
 static unsigned countf = 0;
@@ -61,18 +60,18 @@ namespace render_kinect {
   class Simulate {
   public:
   
-  Simulate(CameraInfo &cam_info, std::string object_name, std::string dot_path) 
+  Simulate(CameraInfo &cam_info, std::string object_path, std::string dot_path) 
     : out_path_("/tmp/") 
     ,  priv_nh_("~")
       {
 	// allocate memory for depth image
-	int w = cam_info.width;
-	int h = cam_info.height;
+	int w = cam_info.width_;
+	int h = cam_info.height_;
 
 	depth_im_ = cv::Mat(h, w, CV_32FC1);
 	scaled_im_ = cv::Mat(h, w, CV_32FC1);
 
-	object_model_ = new KinectSimulator(cam_info, object_name, dot_path);
+	object_model_ = new KinectSimulator(cam_info, object_path, dot_path);
 
 	transform_ = Eigen::Affine3d::Identity();
 
@@ -164,6 +163,12 @@ namespace render_kinect {
       cv::Mat p_result;
       object_model_->intersect(transform_, point_cloud_, depth_im_, labels_);
       
+      // get the current time for synchronisation of all messages
+      ros::Time time = ros::Time::now ();
+      
+      if (pub_cam_info_.getNumSubscribers () > 0)
+	pub_cam_info_.publish (object_model_->getCameraInfo (time));
+      
       /*
       // in case object is not in view, don't store any data
       // However, if background is used, there will be points in the point cloud
@@ -239,8 +244,6 @@ namespace render_kinect {
     image_transport::ImageTransport* it_;
     image_transport::Publisher pub_depth_image_;
     
-    // messages
-    sensor_msgs::CameraInfo cam_info_;
     
   };
 

@@ -106,6 +106,8 @@ namespace render_kinect
 		   cv::Mat &depth_map,
 		   cv::Mat &labels);
 
+    sensor_msgs::CameraInfoPtr getCameraInfo (ros::Time time);
+
     KinectSimulator(const CameraInfo &p_camera_info,
 		    std::string object_name,
 		    std::string dot_path);

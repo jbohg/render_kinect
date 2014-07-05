@@ -98,6 +98,16 @@ void getObjectMeshPath(ros::NodeHandle &nh,
 void getCameraInfo(ros::NodeHandle &nh,
 		   render_kinect::CameraInfo &cam_info)
 {
+  std::string frame_id;
+  nh.param ("depth_frame_id", frame_id, std::string (""));
+  if (frame_id.empty ())
+    {
+      frame_id = "/camera_depth_optical_frame";
+      ROS_INFO ("'frame_id' not set. using default: '%s'", frame_id.c_str());
+    }
+  else
+    ROS_INFO ("frame_id = '%s' ", frame_id.c_str());
+
   // get the path to the camera parameters
   std::string calib_url;
   bool calibration_valid = false;
@@ -119,23 +129,29 @@ void getCameraInfo(ros::NodeHandle &nh,
   }
 
   // image size
-  cam_info.width = 640;
-  cam_info.height = 480;
+  cam_info.width_ = 640;
+  cam_info.height_ = 480;
 
   // depth limits
-  cam_info.z_near = 0.5;
-  cam_info.z_far = 6.0;
+  cam_info.z_near_ = 0.5;
+  cam_info.z_far_ = 6.0;
 
-  // Type of noise
-  if (noise.compare("NONE"))
-    cam_info.noise_ = render_kinect::NONE;
-  else if(noise.compare("GAUSSIAN"))
-    cam_info.noise_ = render_kinect::GAUSSIAN;
-  else if (noise.compare("PERLIN"))
-    cam_info.noise_ = render_kinect::PERLIN;
-  else {
-    ROS_ERROR("Given noise type invalid: %s\n", noise.c_str());
-    exit(-1);
+  // set frame_id
+  cam_info.frame_id_ = frame_id;
+
+  // baseline between IR projector and IR camera
+    cam_info.tx_ = 0.075;
+
+    // Type of noise
+    if (noise.compare("NONE")==0) {
+      cam_info.noise_ = render_kinect::NONE;
+    } else if(noise.compare("GAUSSIAN")==0) {
+      cam_info.noise_ = render_kinect::GAUSSIAN;
+    } else if (noise.compare("PERLIN")==0) {
+      cam_info.noise_ = render_kinect::PERLIN;
+    } else {
+      ROS_ERROR("Given noise type invalid: %s\n", noise.c_str());
+      exit(-1);
   }
   
   if (!calibration_valid) {
@@ -145,9 +161,6 @@ void getCameraInfo(ros::NodeHandle &nh,
     
     cam_info.fx_ = 580.0;
     cam_info.fy_ = 580.0;
-
-    // baseline between IR projector and IR camera
-    cam_info.tx_ = 0.075;
     
   } else {
 
@@ -173,11 +186,6 @@ void getCameraInfo(ros::NodeHandle &nh,
 	fillCamMat(cam_mat, cam_info.fx_, cam_info.cx_, cam_info.cy_);
 	cam_info.fy_ = cam_info.fx_;
       }
-      if( out =="camera_rgb_to_ir"){
-	float tx, ty, tz, r, p, y;
-	fillTransform(cam_mat, tx, ty, tz, r, p , y);
-	cam_info.tx_ = tx;
-      } 
     } // yaml parsing
   } // ifelse calibration file valid
 }
@@ -225,6 +233,7 @@ int main(int argc, char **argv)
     
     // give pose and object name to renderer
     Simulator.simulatePublishMeasurement(current_tf);
+    //Simulator.simulateStoreMeasurement(current_tf, 1, 0, 1);
     
     ROS_INFO("Rendering %d\n", i);
   }

@@ -41,6 +41,9 @@
 #define KINECT_SIM_CAMERA_H_
 
 #include <opencv2/opencv.hpp>
+#include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/distortion_models.h>
+#include <boost/make_shared.hpp>
 
 namespace render_kinect
 {
@@ -57,13 +60,15 @@ namespace render_kinect
   {
   public:
 
-    int width, height;
-    double z_near, z_far;
+    int width_, height_;
+    double z_near_, z_far_;
     double fx_, fy_;
     double cx_, cy_;
     double tx_;
 
     NoiseType noise_;
+
+    std::string frame_id_;
   };
 
   class Camera
@@ -79,7 +84,7 @@ namespace render_kinect
     {
       return info_.fy_;
     }
-
+    
     double getCx()
     {
       return info_.cx_;
@@ -92,22 +97,22 @@ namespace render_kinect
 
     int getWidth()
     {
-      return info_.width;
+      return info_.width_;
     }
 
     int getHeight()
     {
-      return info_.height;
+      return info_.height_;
     }
 
     double getZNear()
     {
-      return info_.z_near;
+      return info_.z_near_;
     }
 
     double getZFar()
     {
-      return info_.z_far;
+      return info_.z_far_;
     }
 
     double getTx() 
@@ -139,6 +144,35 @@ namespace render_kinect
 	ray.y = (uv_rect.y - info_.cy_) / info_.fy_;
 	ray.z = 1.0;
 	return ray;
+      }
+
+    sensor_msgs::CameraInfoPtr getCameraInfo (ros::Time time)
+      {
+	sensor_msgs::CameraInfoPtr info_msg = boost::make_shared<sensor_msgs::CameraInfo > ();
+	info_msg->header.stamp    = time;
+	info_msg->header.frame_id = info_.frame_id_;
+	info_msg->width           = info_.width_;
+	info_msg->height          = info_.height_;
+
+	info_msg->D = std::vector<double>(5, 0.0);
+	info_msg->distortion_model = sensor_msgs::distortion_models::PLUMB_BOB;
+	info_msg->K.assign (0.0);
+	info_msg->R.assign (0.0);
+	info_msg->P.assign (0.0);
+	// Simple camera matrix: square pixels, principal point at center
+	info_msg->K[0] = info_msg->K[4] = info_.fx_;
+	info_msg->K[2] = info_.cx_;
+	info_msg->K[5] = info_.cy_;
+	info_msg->K[8] = 1.0;
+	// no rotation: identity
+	info_msg->R[0] = info_msg->R[4] = info_msg->R[8] = 1.0;
+	// no rotation, no translation => P=K(I|0)=(K|0)
+	info_msg->P[0] = info_msg->P[5] = info_msg->K[0];
+	info_msg->P[2] = info_msg->K[2];
+	info_msg->P[6] = info_msg->K[5];
+	info_msg->P[10] = 1.0;
+
+	return info_msg;
       }
 
   private:
