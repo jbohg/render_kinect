@@ -13,6 +13,7 @@ find_package(catkin REQUIRED
     message_generation
     sensor_msgs
     image_transport
+    cv_bridge
   )
 
 # There exist different versions of the assimp library for different 
@@ -96,7 +97,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roslib message_runtime image_transport roscpp
+  CATKIN_DEPENDS roslib message_runtime image_transport roscpp cv_bridge
   DEPENDS OpenCV eigen 
 )
 

@@ -39,6 +39,7 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <cv_bridge/cv_bridge.h>
 
 #ifdef HAVE_PCL
 #include <pcl/point_cloud.h>
@@ -52,6 +53,7 @@
 
 // ROS
 #include <image_transport/image_transport.h>
+#include <sensor_msgs/image_encodings.h>
 
 static unsigned countf = 0;
 
@@ -63,13 +65,14 @@ namespace render_kinect {
   Simulate(CameraInfo &cam_info, std::string object_path, std::string dot_path) 
     : out_path_("/tmp/") 
     ,  priv_nh_("~")
+    ,  frame_id_( cam_info.frame_id_)
       {
 	// allocate memory for depth image
 	int w = cam_info.width_;
 	int h = cam_info.height_;
 
 	depth_im_ = cv::Mat(h, w, CV_32FC1);
-	scaled_im_ = cv::Mat(h, w, CV_32FC1);
+	scaled_im_ = cv::Mat(h, w, CV_8UC1);
 
 	object_model_ = new KinectSimulator(cam_info, object_path, dot_path);
 
@@ -79,6 +82,7 @@ namespace render_kinect {
 	it_ = new image_transport::ImageTransport(priv_nh_);
 	pub_depth_image_ = it_->advertise ("depth/image", 5);
 	pub_cam_info_ = priv_nh_.advertise<sensor_msgs::CameraInfo > ("depth/camera_info", 5);
+	pub_point_cloud_ = priv_nh_.advertise<sensor_msgs::PointCloud2> ("depth/points", 5);
 
       }
 
@@ -106,51 +110,16 @@ namespace render_kinect {
       }
 
       // store on disk
-      if (store_depth) {
-	std::stringstream lD;
-	lD << out_path_ << "depth_orig" << std::setw(3) << std::setfill('0')
-	   << countf << ".png";
-	convertScaleAbs(depth_im_, scaled_im_, 255.0f);
-	cv::imwrite(lD.str().c_str(), scaled_im_);
-      }
+      if (store_depth)
+	storeDepthImage("depth_orig", countf);
 
       // store on disk
-      if (store_label) {
-	std::stringstream lD;
-	lD << out_path_ << "labels" << std::setw(3) << std::setfill('0')
-	   << countf << ".png";
-	cv::imwrite(lD.str().c_str(), labels_);
-      }
+      if (store_label)
+	storeLabeledImage("labels", countf);
 
       //convert point cloud to pcl/pcd format
-      if (store_pcd) {
-
-#ifdef HAVE_PCL
-	std::stringstream lD;
-	lD << out_path_ << "point_cloud" << std::setw(3)
-	   << std::setfill('0') << countf << ".pcd";
-
-	pcl::PointCloud<pcl::PointXYZ> cloud;
-	// Fill in the cloud data
-	cloud.width = point_cloud_.rows;
-	cloud.height = 1;
-	cloud.is_dense = false;
-	cloud.points.resize(cloud.width * cloud.height);
-
-	for (int i = 0; i < point_cloud_.rows; i++) {
-	  const float* point = point_cloud_.ptr<float>(i);
-	  cloud.points[i].x = point[0];
-	  cloud.points[i].y = point[1];
-	  cloud.points[i].z = point[2];
-	}
-	
-	if (pcl::io::savePCDFileBinary(lD.str(), cloud) != 0)
-	  std::cout << "Couldn't store point cloud at " << lD.str() << std::endl;
-
-#else
-	std::cout << "Couldn't store point cloud since PCL is not installed." << std::endl;
-#endif
-      }
+      if (store_pcd)
+	storePointCloud("point_cloud", countf);
     }
 
     void simulatePublishMeasurement(const Eigen::Affine3d &new_tf) {
@@ -161,48 +130,131 @@ namespace render_kinect {
 
       // simulate measurement of object and store in image, point cloud and labeled image
       cv::Mat p_result;
-      object_model_->intersect(transform_, point_cloud_, depth_im_, labels_);
+      object_model_->intersect(transform_, point_cloud_, depth_im_, labels_);      
       
+      // in case object is not in view, don't store any data
+      // However, if background is used, there will be points in the point cloud
+      // although they don't belong to the object
+      int n_vis = 4000;
+      if(point_cloud_.rows<n_vis) {
+	std::cout << "Object not in view.\n";
+	return;
+      }
+
       // get the current time for synchronisation of all messages
       ros::Time time = ros::Time::now ();
       
+      // publish camera info
+      publishCameraInfo(time);
+
+      // publish depth image
+      publishDepthImage(time);
+
+      // publish point cloud
+      publishPointCloud(time);
+
+    }
+
+  private:
+
+    void publishCameraInfo (ros::Time time)
+    {
       if (pub_cam_info_.getNumSubscribers () > 0)
 	pub_cam_info_.publish (object_model_->getCameraInfo (time));
-      
-      /*
-      // in case object is not in view, don't store any data
-      // However, if background is used, there will be points in the point cloud
-      // although they don't belong to the arm
-      int n_vis = 4000;
-      if(point_cloud_.rows<n_vis) {
-      std::cout << "Object not in view.\n";
-      return;
-      }
+    }
 
-      // store on disk
-      if (store_depth) {
+    void storeDepthImage (std::string prefix, 
+			  int count)
+    {
       std::stringstream lD;
-      lD << out_path_ << "depth_orig" << std::setw(3) << std::setfill('0')
-      << countf << ".png";
+      lD << out_path_ << prefix << std::setw(3) << std::setfill('0')
+	 << count << ".png";
       convertScaleAbs(depth_im_, scaled_im_, 255.0f);
       cv::imwrite(lD.str().c_str(), scaled_im_);
-      }
+    }
 
-      // store on disk
-      if (store_label) {
+    void storeLabeledImage (std::string prefix, 
+			    int count)
+    {
       std::stringstream lD;
-      lD << out_path_ << "labels" << std::setw(3) << std::setfill('0')
-      << countf << ".png";
+      lD << out_path_ << prefix << std::setw(3) << std::setfill('0')
+	 << count << ".png";
       cv::imwrite(lD.str().c_str(), labels_);
+    }
+
+    void publishDepthImage (ros::Time time)
+    {
+      // DEBUG
+      // double min_val, max_val;
+      // cv::minMaxLoc(depth_im_, &min_val, &max_val);
+      // ROS_INFO("Minimum and Maximum Depth Value: %f %f", min_val, max_val);
+
+      cv_bridge::CvImage cv_img;
+      cv_img.header.stamp = time;
+      cv_img.header.frame_id = frame_id_;
+      cv_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+      cv_img.image = depth_im_;
+
+      if (pub_depth_image_.getNumSubscribers () > 0)
+	pub_depth_image_.publish (cv_img.toImageMsg());
+      
+    }
+    
+    void publishPointCloud(ros::Time time)
+    {
+
+      sensor_msgs::PointCloud2Ptr points = boost::make_shared<sensor_msgs::PointCloud2 > ();
+      points->header.frame_id = frame_id_;
+      points->header.stamp = time;
+      points->width        = point_cloud_.rows;
+      points->height       = 1;
+      points->is_dense     = true;
+      points->is_bigendian = false;
+      points->fields.resize( 3 );
+      points->fields[0].name = "x"; 
+      points->fields[1].name = "y"; 
+      points->fields[2].name = "z";
+      int offset = 0;
+      for (size_t d = 0; 
+	   d < points->fields.size (); 
+	   ++d, offset += sizeof(float)) {
+	points->fields[d].offset = offset;
+	points->fields[d].datatype = 
+	  sensor_msgs::PointField::FLOAT32;
+	points->fields[d].count  = 1;
       }
 
-      //convert point cloud to pcl/pcd format
-      if (store_pcd) {
+      points->point_step = offset;
+      points->row_step   = 
+	points->point_step * points->width;
+      
+      points->data.resize (points->width * 
+			   points->height * 
+			   points->point_step);
+      
+      for (int i = 0; i < point_cloud_.rows; i++) {
+	const float* point = point_cloud_.ptr<float>(i);
+	memcpy (&points->data[i * points->point_step + points->fields[0].offset], 
+		&point[0], sizeof (float));
+	memcpy (&points->data[ i * points->point_step + points->fields[1].offset], 
+		&point[1], sizeof (float));
+	memcpy (&points->data[ i * points->point_step + points->fields[2].offset], 
+		&point[2], sizeof (float));
+      }
 
-      #ifdef HAVE_PCL
+      if (  pub_point_cloud_.getNumSubscribers () > 0)
+	pub_point_cloud_.publish (points);
+    }
+
+
+    void storePointCloud(std::string prefix, 
+			 int count)
+    {
+
+#ifdef HAVE_PCL
       std::stringstream lD;
-      lD << out_path_ << "point_cloud" << std::setw(3)
-      << std::setfill('0') << countf << ".pcd";
+      lD << out_path_ << prefix << std::setw(3)
+	 << std::setfill('0') << count << ".pcd";
 
       pcl::PointCloud<pcl::PointXYZ> cloud;
       // Fill in the cloud data
@@ -210,30 +262,26 @@ namespace render_kinect {
       cloud.height = 1;
       cloud.is_dense = false;
       cloud.points.resize(cloud.width * cloud.height);
-
+	
       for (int i = 0; i < point_cloud_.rows; i++) {
-      const float* point = point_cloud_.ptr<float>(i);
-      cloud.points[i].x = point[0];
-      cloud.points[i].y = point[1];
-      cloud.points[i].z = point[2];
+	const float* point = point_cloud_.ptr<float>(i);
+	cloud.points[i].x = point[0];
+	cloud.points[i].y = point[1];
+	cloud.points[i].z = point[2];
       }
 	
       if (pcl::io::savePCDFileBinary(lD.str(), cloud) != 0)
-      std::cout << "Couldn't store point cloud at " << lD.str() << std::endl;
+	std::cout << "Couldn't store point cloud at " << lD.str() << std::endl;
 
-      #else
+#else
       std::cout << "Couldn't store point cloud since PCL is not installed." << std::endl;
-      #endif
-      
-      }
-      */
+#endif
     }
-
-  private:
     
     KinectSimulator *object_model_;
     cv::Mat depth_im_, scaled_im_, point_cloud_, labels_;
     std::string out_path_;
+    std::string frame_id_;
     Eigen::Affine3d transform_; 
 
     // node handle
@@ -243,6 +291,7 @@ namespace render_kinect {
     ros::Publisher pub_cam_info_;
     image_transport::ImageTransport* it_;
     image_transport::Publisher pub_depth_image_;
+    ros::Publisher pub_point_cloud_;
     
     
   };

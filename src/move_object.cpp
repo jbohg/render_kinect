@@ -221,7 +221,7 @@ int main(int argc, char **argv)
   render_kinect::Simulate Simulator(cam_info, object_mesh_path, dot_pattern_path);
 
   // Number of samples
-  int frames = 10;
+  int frames = 100;
 
   // Storage of random transform
   Eigen::Affine3d noise;
@@ -233,7 +233,6 @@ int main(int argc, char **argv)
     
     // give pose and object name to renderer
     Simulator.simulatePublishMeasurement(current_tf);
-    //Simulator.simulateStoreMeasurement(current_tf, 1, 0, 1);
     
     ROS_INFO("Rendering %d\n", i);
   }
