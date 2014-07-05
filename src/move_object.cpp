@@ -95,6 +95,23 @@ void getObjectMeshPath(ros::NodeHandle &nh,
   object_mesh_path = full_path.str();
 }
 
+bool renderBackground(ros::NodeHandle &nh)
+{
+  bool background;
+  nh.param ("background", background, false);
+  return background;
+}
+
+void getRoomPath(std::string &pkg_path,
+		 std::string &room_path)
+{
+  // Get the path to the object mesh model.
+  std::string room_mesh = "/obj_models/room0.dae";
+  std::stringstream full_path;
+  full_path << pkg_path << room_mesh;
+  room_path = full_path.str();
+}
+
 void getCameraInfo(ros::NodeHandle &nh,
 		   render_kinect::CameraInfo &cam_info)
 {
@@ -207,6 +224,10 @@ int main(int argc, char **argv)
   // Get the path to the dot pattern
   std::string dot_pattern_path;
   getDotPatternPath(path, dot_pattern_path);
+
+  // Get the path of the room (background mesh)
+  std::string room_path;
+  getRoomPath(path, room_path);
   
   // get the camera info
   render_kinect::CameraInfo cam_info;
@@ -218,7 +239,11 @@ int main(int argc, char **argv)
   transform.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
 
   // Kinect Simulator
-  render_kinect::Simulate Simulator(cam_info, object_mesh_path, dot_pattern_path);
+  render_kinect::Simulate Simulator(cam_info, 
+				    object_mesh_path, 
+				    dot_pattern_path, 
+				    renderBackground(nh),
+				    room_path);
 
   // Number of samples
   int frames = 100;

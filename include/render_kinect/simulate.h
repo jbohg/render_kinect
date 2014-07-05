@@ -62,7 +62,11 @@ namespace render_kinect {
   class Simulate {
   public:
   
-  Simulate(CameraInfo &cam_info, std::string object_path, std::string dot_path) 
+  Simulate(CameraInfo &cam_info, 
+	   std::string object_path, 
+	   std::string dot_path, 
+	   bool background = false,
+	   std::string room_path = "") 
     : out_path_("/tmp/") 
     ,  priv_nh_("~")
     ,  frame_id_( cam_info.frame_id_)
@@ -74,7 +78,7 @@ namespace render_kinect {
 	depth_im_ = cv::Mat(h, w, CV_32FC1);
 	scaled_im_ = cv::Mat(h, w, CV_8UC1);
 
-	object_model_ = new KinectSimulator(cam_info, object_path, dot_path);
+	object_model_ = new KinectSimulator(cam_info, object_path, dot_path, background, room_path);
 
 	transform_ = Eigen::Affine3d::Identity();
 

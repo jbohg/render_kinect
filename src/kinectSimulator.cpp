@@ -69,16 +69,20 @@
 #include <omp.h>
 #endif
 
-//static unsigned countf = 0;
-//static const int prec = 5;
+// DEBUG
+// static unsigned countf = 0;
+// static const int prec = 5;
 
 namespace render_kinect {
 
   // Constructor
   KinectSimulator::KinectSimulator(const CameraInfo &p_camera_info,
-				   std::string object_name,
-				   std::string dot_path) 
-    : camera_( p_camera_info)
+				   std::string object_path,
+				   std::string dot_path,
+				   bool background,
+				   std::string room_path) 
+    : render_bg_(background)
+    , camera_( p_camera_info)
     , noise_type_(p_camera_info.noise_)
     , noise_gen_(NULL)
     , noisy_labels_(0)
@@ -86,9 +90,11 @@ namespace render_kinect {
     
     std::cout << "Width and Height: " << p_camera_info.width_ << "x"
 	      << p_camera_info.height_ << std::endl;
-    std::cout << "Loading models for objects: " << object_name << std::endl;
+    std::cout << "Loading models for objects: " << object_path << std::endl;
 
-    model_ = boost::shared_ptr<ObjectMeshModel>(new ObjectMeshModel(object_name));
+    model_ = boost::shared_ptr<ObjectMeshModel>(new ObjectMeshModel(object_path));
+    if(render_bg_)
+      room_ = boost::shared_ptr<ObjectMeshModel>(new ObjectMeshModel(room_path));
     
     search_ = new TreeAndTri; 
     updateTree();
@@ -173,8 +179,16 @@ namespace render_kinect {
   {
     model_->uploadVertices(search_);
     model_->uploadIndices(search_);
-    // since we are only dealing with one mesh for now, ID=0
-    model_->uploadPartIDs(search_, 0);
+
+    if(render_bg_) {
+      room_->uploadVertices(search_);
+      room_->uploadIndices(search_);
+    }
+
+    // since we are only dealing with 2 meshes, for now hardcoded IDs
+    model_->uploadPartIDs(search_, 1);
+    if(render_bg_)
+      room_->uploadPartIDs(search_, 0);
     
     search_->tree.rebuild(search_->triangles.begin(), search_->triangles.end());
     search_->tree.accelerate_distance_queries();

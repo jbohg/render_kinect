@@ -66,6 +66,10 @@ namespace render_kinect
     boost::shared_ptr<ObjectMeshModel> model_;
     TreeAndTri* search_;
 
+    // background structure
+    bool render_bg_;
+    boost::shared_ptr<ObjectMeshModel> room_;
+
     Camera camera_;
     static const float invalid_disp_ = 99999999.9;
     static const float window_inlier_distance_ = 0.1;
@@ -110,7 +114,9 @@ namespace render_kinect
 
     KinectSimulator(const CameraInfo &p_camera_info,
 		    std::string object_name,
-		    std::string dot_path);
+		    std::string dot_path,
+		    bool background,
+		    std::string room_path);
     ~KinectSimulator();
 
    

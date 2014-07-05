@@ -97,7 +97,17 @@ namespace render_kinect
 	  std::cout << "Could not load mesh from file " << object_path << std::endl;
 	  exit(-1);
 	}
+	
+	// allow vertices to come from multiple meshes within a part
+	numFaces_ = 0;
+	numVertices_ = 0;
+	for(unsigned m=0; m<scene_->mNumMeshes; ++m){
+	  numFaces_ += scene_->mMeshes[m]->mNumFaces;
+	  numVertices_ += scene_->mMeshes[m]->mNumVertices;
+	}
 
+	
+	/*
 	if(scene_->mNumMeshes>1)
 	  {
 	    std::cout << "Object " << object_path << " consists of more than one mesh." << std::endl;
@@ -106,11 +116,27 @@ namespace render_kinect
 
 	numFaces_ = scene_->mMeshes[0]->mNumFaces;
 	numVertices_ = scene_->mMeshes[0]->mNumVertices;
-	
+	*/
+
 	std::cout << "adding " << scene_->mNumMeshes 
 		  << " meshes with " << numFaces_ 
 		  << " faces and " << numVertices_ 
 		  << " vertices" << std::endl;
+	
+	vertices_.resize(4,numVertices_);
+	unsigned v_idx=0;
+	
+	for(unsigned m=0; m<scene_->mNumMeshes; ++m) 
+	  {
+	    for(unsigned v=0;v<scene_->mMeshes[m]->mNumVertices;++v,++v_idx)
+	      {
+		vertices_(0,v_idx) = scene_->mMeshes[m]->mVertices[v].x;
+		vertices_(1,v_idx) = scene_->mMeshes[m]->mVertices[v].y;
+		vertices_(2,v_idx) = scene_->mMeshes[m]->mVertices[v].z;
+		vertices_(3,v_idx) = 1;
+	      }
+	  }
+	/*
 	vertices_.resize(4,numVertices_);
 	for(unsigned v=0;v<numVertices_;++v)
 	    {
@@ -119,7 +145,7 @@ namespace render_kinect
 	      vertices_(2,v) = scene_->mMeshes[0]->mVertices[v].z;
 	      vertices_(3,v) = 1;
 	    }
-	
+	*/
 	original_transform_ = Eigen::Affine3d::Identity();
       }
    
