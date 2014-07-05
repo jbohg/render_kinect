@@ -44,6 +44,7 @@
 
 namespace render_kinect
 {
+
   enum NoiseType
   {
     GAUSSIAN=1,

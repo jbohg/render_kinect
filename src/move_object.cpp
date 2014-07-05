@@ -39,6 +39,7 @@
 
 #include <render_kinect/simulate.h>
 #include <render_kinect/camera.h>
+#include <render_kinect/yamlutils.h>
 
 #include <ros/package.h>
 
@@ -63,48 +64,145 @@ void getRandomTransform(const double &p_x,
   p_tf.rotate(Eigen::AngleAxisd( p_angle*(double)(rand()%2000 - 1000)/1000, axis));
 }
 
-// main function that generated a number of sample outputs for a given object mesh. 
-int main(int argc, char **argv)
+void getDotPatternPath(std::string &pkg_path, 
+		       std::string &dot_pattern_path)
 {
+  std::string dot_path = "/data/kinect-pattern_3x3.png";
+  std::stringstream full_dot_path;
+  full_dot_path << pkg_path << dot_path;
+  dot_pattern_path = full_dot_path.str();
+}
+
+void getObjectMeshPath(ros::NodeHandle &nh,
+		       std::string &pkg_path,
+		       std::string &object_mesh_path)
+{
+  std::string object_mesh;
+  nh.param ("object_mesh", object_mesh, std::string (""));
+  if (object_mesh.empty ())
+    {
+      object_mesh = "wheel.obj";
+      ROS_INFO ("'object_mesh' not set. using default: '%s'", object_mesh.c_str());
+    }
+  else
+    ROS_INFO ("object_mesh = '%s' ", object_mesh.c_str());
   
-  if(argc<2){
-    std::cerr << "Usage: " << argv[0] << " model_file.obj" << std::endl;
+
+  // Get the path to the object mesh model.
+  std::string object_models_dir = "/obj_models/";
+  std::stringstream full_path;
+  full_path << pkg_path << object_models_dir << object_mesh;
+  object_mesh_path = full_path.str();
+}
+
+void getCameraInfo(ros::NodeHandle &nh,
+		   render_kinect::CameraInfo &cam_info)
+{
+  // get the path to the camera parameters
+  std::string calib_url;
+  bool calibration_valid = false;
+  nh.param ("calib_url", calib_url, std::string (""));
+  if (calib_url.empty ())
+    ROS_INFO ("Calibration file not set. using default values");
+  else 
+    calibration_valid = true;
+    ROS_INFO ("Loading Calibration from '%s'", calib_url.c_str());
+
+  // get the noise model
+  std::string noise;
+  nh.param ("noise", noise, std::string (""));
+  if (noise.empty ()) { 
+    noise = "NONE";
+    ROS_INFO ("Noise model not set. Using 'NONE'.");
+  } else {
+    ROS_INFO ("Using noise model '%s'", noise.c_str());
+  }
+
+  // image size
+  cam_info.width = 640;
+  cam_info.height = 480;
+
+  // depth limits
+  cam_info.z_near = 0.5;
+  cam_info.z_far = 6.0;
+
+  // Type of noise
+  if (noise.compare("NONE"))
+    cam_info.noise_ = render_kinect::NONE;
+  else if(noise.compare("GAUSSIAN"))
+    cam_info.noise_ = render_kinect::GAUSSIAN;
+  else if (noise.compare("PERLIN"))
+    cam_info.noise_ = render_kinect::PERLIN;
+  else {
+    ROS_ERROR("Given noise type invalid: %s\n", noise.c_str());
     exit(-1);
   }
   
+  if (!calibration_valid) {
+    // Default parameters
+    cam_info.cx_ = 320;
+    cam_info.cy_ = 240;
+    
+    cam_info.fx_ = 580.0;
+    cam_info.fy_ = 580.0;
+
+    // baseline between IR projector and IR camera
+    cam_info.tx_ = 0.075;
+    
+  } else {
+
+    // parse the yaml calibration file
+    std::ifstream fin(calib_url.c_str());
+    if(fin.fail()){
+      ROS_ERROR("Could not read calibration file at %s", calib_url.c_str() );
+      exit(-1);
+    }
+    YAML::Parser parser(fin);
+    std::string out;
+    YAML::Node node;
+    parser.GetNextDocument(node);
+    for (YAML::Iterator i = node.begin(); i != node.end(); ++i) {
+      render_kinect::Matrix cam_mat;
+      const YAML::Node & key   = i.first();
+      key >> out;
+      cam_mat.name = out;
+      const YAML::Node & value = i.second();
+      value >> cam_mat;
+      
+      if( out == "camera_matrix_ir" ) {
+	fillCamMat(cam_mat, cam_info.fx_, cam_info.cx_, cam_info.cy_);
+	cam_info.fy_ = cam_info.fx_;
+      }
+      if( out =="camera_rgb_to_ir"){
+	float tx, ty, tz, r, p, y;
+	fillTransform(cam_mat, tx, ty, tz, r, p , y);
+	cam_info.tx_ = tx;
+      } 
+    } // yaml parsing
+  } // ifelse calibration file valid
+}
+
+// main function that generated a number of sample outputs for a given object mesh. 
+int main(int argc, char **argv)
+{
   // initialize ros
   ros::init(argc, argv, "move_object");
-
-  // Get the path to the object mesh model.
+  ros::NodeHandle nh("~");
+  
+  // get the path to the package
   std::string path = ros::package::getPath("render_kinect");
-  std::string object_models_dir = "/obj_models/";
-  std::stringstream full_path;
-  full_path << path << object_models_dir << argv[1];
+  
+  // get the path to the object mesh
+  std::string object_mesh_path;
+  getObjectMeshPath(nh, path, object_mesh_path);
 
   // Get the path to the dot pattern
-  std::string dot_path = "/data/kinect-pattern_3x3.png";
-  std::stringstream full_dot_path;
-  full_dot_path << path << dot_path;
+  std::string dot_pattern_path;
+  getDotPatternPath(path, dot_pattern_path);
   
-  // Camera Parameters
+  // get the camera info
   render_kinect::CameraInfo cam_info;
-  
-  cam_info.width = 640;
-  cam_info.height = 480;
-  cam_info.cx_ = 320;
-  cam_info.cy_ = 240;
-  
-  cam_info.z_near = 0.5;
-  cam_info.z_far = 6.0;
-  cam_info.fx_ = 580.0;
-  cam_info.fy_ = 580.0;
-  // baseline between IR projector and IR camera
-  cam_info.tx_ = 0.075;
-
-  // Type of noise
-  //  cam_info.noise_ = render_kinect::GAUSSIAN;
-  //  cam_info.noise_ = render_kinect::PERLIN;
-  cam_info.noise_ = render_kinect::NONE;
+  getCameraInfo(nh, cam_info);
 
   // Test Transform
   Eigen::Affine3d transform(Eigen::Affine3d::Identity());
@@ -112,7 +210,7 @@ int main(int argc, char **argv)
   transform.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
 
   // Kinect Simulator
-  render_kinect::Simulate Simulator(cam_info, full_path.str(), full_dot_path.str());
+  render_kinect::Simulate Simulator(cam_info, object_mesh_path, dot_pattern_path);
 
   // Number of samples
   int frames = 10;
@@ -128,6 +226,7 @@ int main(int argc, char **argv)
     // give pose and object name to renderer
     Simulator.simulatePublishMeasurement(current_tf);
     
+    ROS_INFO("Rendering %d\n", i);
   }
 
   return 0;
