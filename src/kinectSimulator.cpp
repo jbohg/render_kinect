@@ -88,6 +88,9 @@ namespace render_kinect {
     , noisy_labels_(0)
   {
     
+    if(render_bg_)
+      std::cout << "Background rendering with " << room_path << std::endl;
+
     std::cout << "Width and Height: " << p_camera_info.width_ << "x"
 	      << p_camera_info.height_ << std::endl;
     std::cout << "Loading models for objects: " << object_path << std::endl;
@@ -99,9 +102,11 @@ namespace render_kinect {
     search_ = new TreeAndTri; 
     updateTree();
 
-    // colour map assumes there is only one object
+    // colour map assumes there is only one object + optional background
+    if(background)
+      color_map_.push_back(cv::Scalar(background_, background_, background_));
     color_map_.push_back(cv::Scalar( rand()&255, rand()&255, rand()&255 ));
-
+    
     // reading dot pattern for filtering of disparity image
     dot_pattern_ = cv::imread(dot_path.c_str(), 0);
     if(! dot_pattern_.data ) // Check for invalid input
@@ -177,19 +182,24 @@ namespace render_kinect {
   // with new vertices according to the updated transform
   void KinectSimulator::updateTree()
   {
-    model_->uploadVertices(search_);
-    model_->uploadIndices(search_);
+    int last_v = 0, last_t = 0;
+    int nv = model_->uploadVertices(search_, last_v);
+    int nt = model_->uploadIndices(search_, last_t, last_v);
+    model_->uploadPartIDs(search_, nt, 1);
+    last_v = nv;
+    last_t = nt;
 
     if(render_bg_) {
-      room_->uploadVertices(search_);
-      room_->uploadIndices(search_);
+      room_->uploadVertices(search_, last_v);
+      room_->uploadIndices(search_, last_t, last_v);
+      room_->uploadPartIDs(search_, last_t, 0);
+
+      // test best room transformation
+      Eigen::Affine3d transform(Eigen::Affine3d::Identity());
+      transform.translate(Eigen::Vector3d(0.0, 0.0, -1.0));
+      room_->updateTransformation(transform);
     }
 
-    // since we are only dealing with 2 meshes, for now hardcoded IDs
-    model_->uploadPartIDs(search_, 1);
-    if(render_bg_)
-      room_->uploadPartIDs(search_, 0);
-    
     search_->tree.rebuild(search_->triangles.begin(), search_->triangles.end());
     search_->tree.accelerate_distance_queries();
   }

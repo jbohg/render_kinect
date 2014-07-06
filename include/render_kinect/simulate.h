@@ -41,6 +41,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 
+#include <visualization_msgs/Marker.h>
+
 #ifdef HAVE_PCL
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -68,8 +70,9 @@ namespace render_kinect {
 	   bool background = false,
 	   std::string room_path = "") 
     : out_path_("/tmp/") 
-    ,  priv_nh_("~")
-    ,  frame_id_( cam_info.frame_id_)
+      ,  priv_nh_("~")
+      ,  frame_id_( cam_info.frame_id_)
+      ,  room_path_(room_path)
       {
 	// allocate memory for depth image
 	int w = cam_info.width_;
@@ -87,6 +90,8 @@ namespace render_kinect {
 	pub_depth_image_ = it_->advertise ("depth/image", 5);
 	pub_cam_info_ = priv_nh_.advertise<sensor_msgs::CameraInfo > ("depth/camera_info", 5);
 	pub_point_cloud_ = priv_nh_.advertise<sensor_msgs::PointCloud2> ("depth/points", 5);
+	
+	vis_pub = priv_nh_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
       }
 
@@ -156,6 +161,9 @@ namespace render_kinect {
 
       // publish point cloud
       publishPointCloud(time);
+
+      // publish marker
+      publishMarker(time);
 
     }
 
@@ -251,6 +259,35 @@ namespace render_kinect {
     }
 
 
+    void publishMarker(ros::Time time)
+    {
+      visualization_msgs::Marker marker;
+      marker.header.frame_id = frame_id_;
+      marker.header.stamp = time;
+      marker.ns = "my_namespace";
+      marker.id = 0;
+      marker.action = visualization_msgs::Marker::ADD;
+      
+      marker.pose.position.x = 0.0;
+      marker.pose.position.y = 0.0;
+      marker.pose.position.z = -1.0;
+      marker.pose.orientation.w = 1.0;
+      marker.pose.orientation.x = 0.0;
+      marker.pose.orientation.y = 0.0;
+      marker.pose.orientation.z = 0.0;
+
+      marker.scale.x = 1.0;
+      marker.scale.y = 1.0;
+      marker.scale.z = 1.0;
+      marker.color.a = 0.5;
+      marker.color.r = 0.0;
+      marker.color.g = 1.0;
+      marker.color.b = 0.0;
+      marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+      marker.mesh_resource = "package://render_kinect/obj_models/room0.obj";
+      vis_pub.publish( marker );
+    }
+
     void storePointCloud(std::string prefix, 
 			 int count)
     {
@@ -296,7 +333,10 @@ namespace render_kinect {
     image_transport::ImageTransport* it_;
     image_transport::Publisher pub_depth_image_;
     ros::Publisher pub_point_cloud_;
-    
+
+    // Debugging Visualisation
+    std::string room_path_;
+    ros::Publisher vis_pub;
     
   };
 

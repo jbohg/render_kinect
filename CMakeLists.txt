@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(render_kinect)
 
 set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Debug)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -12,6 +13,7 @@ find_package(catkin REQUIRED
     roscpp
     message_generation
     sensor_msgs
+    visualization_msgs
     image_transport
     cv_bridge
   )
@@ -80,10 +82,10 @@ endif(OPENMP_FOUND)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  sensor_msgs  # Or other packages containing msgs
-  )
+#generate_messages(
+#  DEPENDENCIES
+#  sensor_msgs  # Or other packages containing msgs
+#  )
 
 ###################################
 ## catkin specific configuration ##
@@ -97,7 +99,13 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roslib message_runtime image_transport roscpp cv_bridge
+  CATKIN_DEPENDS 
+    roslib 
+    message_runtime
+    visualization_msgs
+    image_transport 
+    roscpp 
+    cv_bridge
   DEPENDS OpenCV eigen 
 )
 

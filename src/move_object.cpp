@@ -246,7 +246,7 @@ int main(int argc, char **argv)
 				    room_path);
 
   // Number of samples
-  int frames = 100;
+  int frames = 50;
 
   // Storage of random transform
   Eigen::Affine3d noise;

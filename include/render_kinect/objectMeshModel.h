@@ -157,47 +157,52 @@ namespace render_kinect
     void updateTransformation(const Eigen::Affine3d &p_tf){transform_ = p_tf * original_transform_;}
 
     // exchange the vertices in the search tree with the newly transformed ones
-    void uploadVertices(TreeAndTri* search)
+    int uploadVertices(TreeAndTri* search, int start)
     {
       Eigen::MatrixXd trans_vertices = transform_.matrix() * vertices_;
 
-      search->points.resize(numVertices_);
-      for(unsigned v=0;v<numVertices_;++v)
-	search->points[v] = K::Point_3(trans_vertices(0,v),
-				       trans_vertices(1,v),
-				       trans_vertices(2,v));
-      return;
+      search->points.resize(start+numVertices_);
+      for(unsigned v=start, m=0;v<start+numVertices_;++v, ++m)
+	search->points[v] = K::Point_3(trans_vertices(0,m),
+				       trans_vertices(1,m),
+				       trans_vertices(2,m));
+      return start+numVertices_;
     }
 
     // Upload the triangle indices to the search tree
     // this would only need to be done ones in the beginning
-    void uploadIndices(TreeAndTri* search)
+    int uploadIndices(TreeAndTri* search, int start_t, int start_v)
     {
-      search->triangles.resize(numFaces_);
-      const struct aiMesh* mesh = scene_->mMeshes[0];
-      for (unsigned f=0; f < numFaces_;++f)
-	{
-	  const struct aiFace* face_ai = &mesh->mFaces[f];
-	  if(face_ai->mNumIndices!=3) {
-	    std::cerr << "not a triangle!: " << face_ai->mNumIndices << " vertices" << std::endl;
-	    throw;
+      unsigned t = start_t;
+      unsigned v_so_far = 0;
+      // allow faces to come from multiple meshes within a part
+      for(unsigned m=0; m<scene_->mNumMeshes; ++m){
+	search->triangles.resize(start_t+numFaces_);
+	const struct aiMesh* mesh = scene_->mMeshes[m];
+	for (unsigned f=0; f < mesh->mNumFaces;++f, ++t)
+	  {
+	    const struct aiFace* face_ai = &mesh->mFaces[f];
+	    if(face_ai->mNumIndices!=3) {
+	      std::cerr << "not a triangle!: " << face_ai->mNumIndices << " vertices" << std::endl;
+	      throw;
+	    }
+	    
+	    // faces contain the original vert indices; they should be offset by the verts
+	    // of the previously processed meshes when one part can have multiple meshes!
+	    search->triangles[t] = K::Triangle_3(search->points[start_v+v_so_far+face_ai->mIndices[0]], 
+						 search->points[start_v+v_so_far+face_ai->mIndices[1]],
+						 search->points[start_v+v_so_far+face_ai->mIndices[2]]);  
 	  }
-	  
-	  // faces contain the original vert indices; they should be offset by the verts
-	  // of the previously processed meshes when one part can have multiple meshes!
-	  search->triangles[f] = K::Triangle_3(search->points[face_ai->mIndices[0]], 
-					       search->points[face_ai->mIndices[1]],
-					       search->points[face_ai->mIndices[2]]);  
-	}
-      
-      return;
+	v_so_far += mesh->mNumVertices;
+      }
+      return start_t+numFaces_;
     }
 
     // Upload the corresponding label to the tree which is associated to the face
-    void uploadPartIDs(TreeAndTri* search, int id)
+    void uploadPartIDs(TreeAndTri* search, int start, int id)
     {
-      search->part_ids.resize(numFaces_);
-      for (unsigned t = 0; t < numFaces_; ++t)
+      search->part_ids.resize(start+numFaces_);
+      for (unsigned t = 0; t < start+numFaces_; ++t)
 	search->part_ids[t] = id;
     }
 
