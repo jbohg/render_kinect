@@ -65,7 +65,7 @@ namespace render_kinect {
   public:
   
   Simulate(CameraInfo &cam_info, 
-	   std::string object_path, 
+	   std::vector<std::string> &object_paths, 
 	   std::string dot_path, 
 	   bool background = false,
 	   std::string room_path = "") 
@@ -81,9 +81,11 @@ namespace render_kinect {
 	depth_im_ = cv::Mat(h, w, CV_32FC1);
 	scaled_im_ = cv::Mat(h, w, CV_8UC1);
 
-	object_model_ = new KinectSimulator(cam_info, object_path, dot_path, background, room_path);
-
-	transform_ = Eigen::Affine3d::Identity();
+	object_model_ = new KinectSimulator(cam_info, 
+					    object_paths, 
+					    dot_path, 
+					    background, 
+					    room_path);
 
 	// initialize all publishers
 	it_ = new image_transport::ImageTransport(priv_nh_);
@@ -99,15 +101,18 @@ namespace render_kinect {
       delete object_model_;
     }
 
-    void simulateStoreMeasurement(const Eigen::Affine3d &new_tf, bool store_depth, bool store_label, bool store_pcd) {
+    void simulateStoreMeasurement(const std::vector<Eigen::Affine3d> &new_tfs, 
+				  bool store_depth, 
+				  bool store_label, 
+				  bool store_pcd) {
       countf++;
       
       // update old transform
-      transform_ = new_tf;
+      transforms_ = new_tfs;
 
       // simulate measurement of object and store in image, point cloud and labeled image
       cv::Mat p_result;
-      object_model_->intersect(transform_, point_cloud_, depth_im_, labels_);
+      object_model_->intersect(transforms_, point_cloud_, depth_im_, labels_);
       
       // in case object is not in view, don't store any data
       // However, if background is used, there will be points in the point cloud
@@ -131,15 +136,15 @@ namespace render_kinect {
 	storePointCloud("point_cloud", countf);
     }
 
-    void simulatePublishMeasurement(const Eigen::Affine3d &new_tf) {
+    void simulatePublishMeasurement(const std::vector<Eigen::Affine3d> &new_tfs) {
       countf++;
       
       // update old transform
-      transform_ = new_tf;
+      transforms_ = new_tfs;
 
       // simulate measurement of object and store in image, point cloud and labeled image
       cv::Mat p_result;
-      object_model_->intersect(transform_, point_cloud_, depth_im_, labels_);      
+      object_model_->intersect(transforms_, point_cloud_, depth_im_, labels_);      
       
       // in case object is not in view, don't store any data
       // However, if background is used, there will be points in the point cloud
@@ -336,7 +341,7 @@ namespace render_kinect {
     cv::Mat depth_im_, scaled_im_, point_cloud_, labels_;
     std::string out_path_;
     std::string frame_id_;
-    Eigen::Affine3d transform_; 
+    std::vector<Eigen::Affine3d> transforms_; 
 
     // node handle
     ros::NodeHandle priv_nh_;

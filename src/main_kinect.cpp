@@ -113,7 +113,9 @@ int main(int argc, char **argv)
   transform.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
 
   // Kinect Simulator
-  render_kinect::Simulate Simulator(cam_info, full_path.str(), full_dot_path.str());
+  std::vector<std::string> object_paths(1);
+  object_paths[0] = full_path.str();
+  render_kinect::Simulate Simulator(cam_info, object_paths, full_dot_path.str());
 
   // Number of samples
   int frames = 10;
@@ -122,13 +124,14 @@ int main(int argc, char **argv)
   bool store_label = 1;
   bool store_pcd = 1;
 
-  // Storage of random transform
+  // Storage of one random transform
   Eigen::Affine3d noise;
+  std::vector<Eigen::Affine3d> current_tf(1);
   for(int i=0; i<frames; ++i) {
     
     // sample noisy transformation around initial one
     getRandomTransform(0.02,0.02,0.02,0.05,noise);
-    Eigen::Affine3d current_tf = noise*transform;
+    current_tf[0] = noise*transform;
     
     // give pose and object name to renderer
     Simulator.simulateStoreMeasurement(current_tf, store_depth, store_label, store_pcd);

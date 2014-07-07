@@ -63,7 +63,8 @@ namespace render_kinect
   {
   private:
 
-    boost::shared_ptr<ObjectMeshModel> model_;
+    std::vector<boost::shared_ptr<ObjectMeshModel> > models_;
+    //boost::shared_ptr<ObjectMeshModel> model_;
     TreeAndTri* search_;
 
     // background structure
@@ -77,9 +78,12 @@ namespace render_kinect
     //static constexpr float window_inlier_distance_ = 0.1;
 
     void initRobot();
-    void updateObjectPoses(const Eigen::Affine3d &p_transform);
+    void updateObjectPoses(const std::vector<Eigen::Affine3d> &p_transforms);
     void updateTree();
-    void filterDisp(const cv::Mat &disp, const cv::Mat &labels, cv::Mat &out_disp, cv::Mat& out_labels);
+    void filterDisp(const cv::Mat &disp, 
+		    const cv::Mat &labels, 
+		    cv::Mat &out_disp, 
+		    cv::Mat& out_labels);
     
     // filter masks 
     static const int size_filt_ = 9;
@@ -103,9 +107,11 @@ namespace render_kinect
     std::vector<cv::Scalar> color_map_;
     static const uchar background_ = 60;
 
+    unsigned getNumMeshes ()const{return models_.size();};
+	
     uchar getBG ()const{return background_;}
 
-    void intersect(const Eigen::Affine3d &p_transform,//tf::Transform &p_transform, 
+    void intersect(const std::vector<Eigen::Affine3d> &p_transforms,
 		   cv::Mat &point_cloud,
 		   cv::Mat &depth_map,
 		   cv::Mat &labels);
@@ -113,7 +119,7 @@ namespace render_kinect
     sensor_msgs::CameraInfoPtr getCameraInfo (ros::Time time);
 
     KinectSimulator(const CameraInfo &p_camera_info,
-		    std::string object_name,
+		    std::vector<std::string> &object_paths,
 		    std::string dot_path,
 		    bool background,
 		    std::string room_path);

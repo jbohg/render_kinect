@@ -75,9 +75,20 @@
 
 namespace render_kinect {
 
+  struct color_cmp {
+    
+    bool operator()(cv::Scalar a, cv::Scalar b)
+    {
+      float mag_a = std::sqrt(a(0)*a(0) + a(1)*a(1) + a(2)*a(2));
+      float mag_b = std::sqrt(b(0)*b(0) + b(1)*b(1) + b(2)*b(2));
+      return mag_a < mag_b;
+    }
+    
+  };
+
   // Constructor
   KinectSimulator::KinectSimulator(const CameraInfo &p_camera_info,
-				   std::string object_path,
+				   std::vector<std::string> &object_paths,
 				   std::string dot_path,
 				   bool background,
 				   std::string room_path) 
@@ -90,22 +101,36 @@ namespace render_kinect {
     
     if(render_bg_)
       std::cout << "Background rendering with " << room_path << std::endl;
-
+    
     std::cout << "Width and Height: " << p_camera_info.width_ << "x"
 	      << p_camera_info.height_ << std::endl;
-    std::cout << "Loading models for objects: " << object_path << std::endl;
-
-    model_ = boost::shared_ptr<ObjectMeshModel>(new ObjectMeshModel(object_path));
-    if(render_bg_)
-      room_ = boost::shared_ptr<ObjectMeshModel>(new ObjectMeshModel(room_path));
+    std::cout << "Loading models for "<<  object_paths.size() << "objects " <<  std::endl;
     
+    // Add all object models
+    std::set<cv::Scalar, color_cmp> color_map_set;
+    std::vector<std::string>::const_iterator it;
+    for(it = object_paths.begin(); it!=object_paths.end(); ++it){
+      boost::shared_ptr<ObjectMeshModel> model(new ObjectMeshModel(*it));
+      bool unique = false;
+      std::pair<std::set<cv::Scalar>::iterator, bool> ret;
+      models_.push_back(model);
+      while(!unique){
+	ret = color_map_set.insert(cv::Scalar( rand()&255, rand()&255, rand()&255 ));
+	unique = ret.second;
+      }
+    }
+
+    std::cout << "Size of color_map " << color_map_set.size() << std::endl;
+    std::copy(color_map_set.begin(), color_map_set.end(), std::back_inserter(color_map_));
+
+    // add background mesh and color label
+    if(render_bg_){
+      room_ = boost::shared_ptr<ObjectMeshModel>(new ObjectMeshModel(room_path));
+      color_map_.push_back(cv::Scalar(background_, background_, background_));
+    }
+
     search_ = new TreeAndTri; 
     updateTree();
-
-    // colour map assumes there is only one object + optional background
-    if(background)
-      color_map_.push_back(cv::Scalar(background_, background_, background_));
-    color_map_.push_back(cv::Scalar( rand()&255, rand()&255, rand()&255 ));
     
     // reading dot pattern for filtering of disparity image
     dot_pattern_ = cv::imread(dot_path.c_str(), 0);
@@ -173,29 +198,17 @@ namespace render_kinect {
   }
   
   // Function that exchanges current object transform
-  void KinectSimulator::updateObjectPoses(const Eigen::Affine3d &p_transform)   
+  void KinectSimulator::updateObjectPoses(const std::vector<Eigen::Affine3d> &p_transforms)   
   {
-    model_->updateTransformation(p_transform);
-  }
-  
-  // Function that triggers AABB tree update by exchanging old vertices 
-  // with new vertices according to the updated transform
-  void KinectSimulator::updateTree()
-  {
-    int last_v = 0, last_t = 0;
-    int nv = model_->uploadVertices(search_, last_v);
-    int nt = model_->uploadIndices(search_, last_t, last_v);
-    model_->uploadPartIDs(search_, nt, 1);
-    last_v = nv;
-    last_t = nt;
-
+    assert(p_transforms.size()==models_.size());
+    
+    std::vector<boost::shared_ptr<ObjectMeshModel> >::const_iterator it;
+    for(it=models_.begin();it!=models_.end();++it)
+      (*it)->updateTransformation(p_transforms[it-models_.begin()]);
+    
     if(render_bg_) {
-      room_->uploadVertices(search_, last_v);
-      room_->uploadIndices(search_, last_t, last_v);
-      room_->uploadPartIDs(search_, last_t, 0);
-
       // hard-coded room transformation 
-      // TODO: DEBUG by displaying markers based on teh current transform in RVIZ
+      // TODO: DEBUG by displaying markers based on the current transform in RVIZ
       Eigen::Affine3d transform(Eigen::Affine3d::Identity());
       transform.translate(Eigen::Vector3d(-1.0, 0.0, -1.0));
       //Eigen::Quaterniond quat;
@@ -203,23 +216,46 @@ namespace render_kinect {
       transform.rotate(Eigen::Quaterniond(1.0, 0.0, 0.5, 0.0)); // w x y z
       room_->updateTransformation(transform);
     }
+  }
+  
+  // Function that triggers AABB tree update by exchanging old vertices 
+  // with new vertices according to the updated transform
+  void KinectSimulator::updateTree()
+  {
+    int last_v = 0, last_t = 0;
+    std::vector<boost::shared_ptr<ObjectMeshModel> >::const_iterator it;
+    for(it=models_.begin();it!=models_.end();++it)
+      {
+	int nv = (*it)->uploadVertices(search_, last_v);
+	int nt = (*it)->uploadIndices(search_, last_t, last_v);
+	(*it)->uploadPartIDs(search_, last_t, it - models_.begin());
+	last_v = nv;
+	last_t = nt;
+      }
+
+    if(render_bg_) {
+      room_->uploadVertices(search_, last_v);
+      room_->uploadIndices(search_, last_t, last_v);
+      room_->uploadPartIDs(search_, last_t, color_map_.size()-1);
+    }
 
     search_->tree.rebuild(search_->triangles.begin(), search_->triangles.end());
     search_->tree.accelerate_distance_queries();
   }
   
   // Function that intersects rays with the object model at current state.
-  void KinectSimulator::intersect(const Eigen::Affine3d &p_transform, 
+  void KinectSimulator::intersect(const std::vector<Eigen::Affine3d> &p_transforms, 
 				  cv::Mat &point_cloud,
 				  cv::Mat &depth_map,
 				  cv::Mat &labels) 
   {
-    // Note that for this simple example case of one rigid object, the tree would actually not needed 
+    // Note that for this simple example case of one rigid object, 
+    // the tree would actually not needed 
     // to be updated. Instead the camera could be moved and rays could be casted from these 
     // new positions.
     // However, for articulated or multiple rigid objects that change their configuration over 
     // time, this update is necessary and is therefore kept in this code.
-    updateObjectPoses(p_transform);
+    updateObjectPoses(p_transforms);
     updateTree();
 
     // allocate memory for depth map and labels

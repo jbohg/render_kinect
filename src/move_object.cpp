@@ -34,7 +34,7 @@
 
 /* move_kinect.cpp 
  * Program publishes simulated measurements from an object moving with 
- * bronian motion.
+ * brownian motion.
  */
 
 #include <render_kinect/simulate.h>
@@ -217,9 +217,14 @@ int main(int argc, char **argv)
   render_kinect::CameraInfo cam_info;
   getCameraInfo(nh, cam_info);
 
+  // testing multiple object parameters
+  std::vector<std::string> object_meshes;
+  object_meshes.push_back(object_mesh_path);
+  object_meshes.push_back(object_mesh_path);
+
   // Kinect Simulator
   render_kinect::Simulate Simulator(cam_info, 
-				    object_mesh_path, 
+				    object_meshes, 
 				    dot_pattern_path, 
 				    renderBackground(nh),
 				    room_path);
@@ -227,24 +232,38 @@ int main(int argc, char **argv)
   // Number of samples
   int frames = 50;
 
-  // Initial Test Transform of Objects
-  Eigen::Affine3d transform(Eigen::Affine3d::Identity());
-  transform.translate(Eigen::Vector3d(0.089837, -0.137769, 1.949210));
-  transform.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
+  // Initial Test Transform for first object
+  Eigen::Affine3d transform1(Eigen::Affine3d::Identity());
+  transform1.translate(Eigen::Vector3d(0.089837, -0.137769, 1.949210));
+  transform1.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
+
+  // Initial Test Transform for second object
+  Eigen::Affine3d transform2(Eigen::Affine3d::Identity());
+  transform2.translate(Eigen::Vector3d(0.089837, 0.137769, 0.949210));
+  transform2.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
   
   // object state and process model and noise variances
+  std::vector<render_kinect::WienerProcess> object_processes;
+
   //render_kinect::RandomProcess object_process(transform,0.02,0.02,0.02,0.05);
-  render_kinect::WienerProcess object_process(transform,0.01,0.01,0.01,0.05);
+  render_kinect::WienerProcess object_process1(transform1,0.01,0.01,0.01,0.05);
+  render_kinect::WienerProcess object_process2(transform2,0.01,0.01,0.01,0.05);
+
+  object_processes.push_back(object_process1);
+  object_processes.push_back(object_process2);
 
   // Storage of random transform
-  Eigen::Affine3d current_tf;
+  std::vector<Eigen::Affine3d> current_tfs;
+  current_tfs.resize(object_processes.size());
   for(int i=0; i<frames; ++i) {
     
     // get the next state of object according to the chosen process model
-    object_process.getNextTransform(current_tf);
+    std::vector<render_kinect::WienerProcess>::iterator it;
+    for(it=object_processes.begin(); it!=object_processes.end(); ++it)
+      it->getNextTransform(current_tfs[it-object_processes.begin()]);
     
     // give pose and object name to renderer
-    Simulator.simulatePublishMeasurement(current_tf);
+    Simulator.simulatePublishMeasurement(current_tfs);
     
     ROS_INFO("Rendering %d\n", i);
   }
