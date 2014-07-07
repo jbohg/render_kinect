@@ -75,6 +75,14 @@
 
 namespace render_kinect {
 
+  float getRGB( uint8_t r, uint8_t g, uint8_t b){
+    union{ int intp; float floatp; } a;
+    int res = (int(r) << 16) | (int(g) << 8) | int(b);
+    a.intp=res;
+    float rgb = *(&a.floatp);
+    return rgb;
+  };
+
   struct color_cmp {
     
     bool operator()(cv::Scalar a, cv::Scalar b)
@@ -104,7 +112,7 @@ namespace render_kinect {
     
     std::cout << "Width and Height: " << p_camera_info.width_ << "x"
 	      << p_camera_info.height_ << std::endl;
-    std::cout << "Loading models for "<<  object_paths.size() << "objects " <<  std::endl;
+    std::cout << "Loading models for "<<  object_paths.size() << " objects " <<  std::endl;
     
     // Add all object models
     std::set<cv::Scalar, color_cmp> color_map_set;
@@ -122,6 +130,7 @@ namespace render_kinect {
 
     std::cout << "Size of color_map " << color_map_set.size() << std::endl;
     std::copy(color_map_set.begin(), color_map_set.end(), std::back_inserter(color_map_));
+    
 
     // add background mesh and color label
     if(render_bg_){
@@ -246,6 +255,7 @@ namespace render_kinect {
   // Function that intersects rays with the object model at current state.
   void KinectSimulator::intersect(const std::vector<Eigen::Affine3d> &p_transforms, 
 				  cv::Mat &point_cloud,
+				  cv::Mat &rgb_vals,
 				  cv::Mat &depth_map,
 				  cv::Mat &labels) 
   {
@@ -267,8 +277,10 @@ namespace render_kinect {
     disp.setTo(invalid_disp_);
     // go through the whole image and create a ray from a pixel -> dir    
     std::vector<cv::Point3f> vec;
+    std::vector<float> rgbs;
     int n_occluded = 0;
     vec.reserve(camera_.getHeight() * camera_.getWidth());
+    rgbs.reserve(camera_.getHeight() * camera_.getWidth());
 
 #if HAVE_OMP
 #pragma omp parallel for collapse(2)
@@ -376,6 +388,7 @@ namespace render_kinect {
     for(int r=0; r<camera_.getHeight(); ++r) {
       float* disp_i = out_disp.ptr<float>(r);
       double* depth_map_i = depth_map.ptr<double>(r);
+      unsigned char* labels_i = labels.ptr<unsigned char>(r);
       for(int c=0; c<camera_.getWidth(); ++c) {
 	float disp = disp_i[c];
 	if(disp<invalid_disp_){
@@ -388,10 +401,17 @@ namespace render_kinect {
 	  new_p.y = (new_p.z/ camera_.getFy()) * (r - camera_.getCy());
 	  vec.push_back(new_p);
 	  depth_map_i[(int)c] = new_p.z;
+	  
+	  // store float-encoded rgb
+	  unsigned char r = labels_i[(int)c*3+0];
+	  unsigned char g = labels_i[(int)c*3+1];
+	  unsigned char b = labels_i[(int)c*3+2];
+	  rgbs.push_back(getRGB(r,g,b));
 	}
       }
     }
     point_cloud = cv::Mat(vec).reshape(1).clone();
+    rgb_vals = cv::Mat(rgbs).clone();
   }
 
   // filter disparity with a 9x9 correlation window

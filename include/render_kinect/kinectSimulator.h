@@ -113,6 +113,7 @@ namespace render_kinect
 
     void intersect(const std::vector<Eigen::Affine3d> &p_transforms,
 		   cv::Mat &point_cloud,
+		   cv::Mat &rgb_vals,
 		   cv::Mat &depth_map,
 		   cv::Mat &labels);
 

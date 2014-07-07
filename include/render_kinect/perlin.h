@@ -5,7 +5,7 @@
 #ifndef _PERLIN_NOISE_H_
 #define _PERLIN_NOISE_H_
 #include <render_kinect/noise.h>
-#include <render_kinect/noiseutils.h>
+#include <render_kinect/tools/noiseutils.h>
 
 #include <time.h>
 #include <libnoise/noise.h>

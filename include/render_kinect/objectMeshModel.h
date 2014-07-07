@@ -202,7 +202,7 @@ namespace render_kinect
     void uploadPartIDs(TreeAndTri* search, int start, int id)
     {
       search->part_ids.resize(start+numFaces_);
-      for (unsigned t = 0; t < start+numFaces_; ++t)
+      for (unsigned t = start; t < start+numFaces_; ++t)
 	search->part_ids[t] = id;
     }
 

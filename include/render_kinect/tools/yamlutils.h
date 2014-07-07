@@ -65,15 +65,6 @@ namespace render_kinect
       }
   }; 
 
-  float getRGB( uint8_t r, uint8_t g, uint8_t b){
-    union{ int intp; float floatp; } a;
-    int res = (int(r) << 16) | (int(g) << 8) | int(b);
-    a.intp=res;
-    float rgb = *(&a.floatp);
-    return rgb;
-  };
-
-
   void fillCamMat( const Matrix &cam_mat, double &f, double &cx, double &cy)
   {
     // assert the matrix is 3x3

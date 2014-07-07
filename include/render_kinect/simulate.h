@@ -81,7 +81,7 @@ namespace render_kinect {
 	depth_im_ = cv::Mat(h, w, CV_32FC1);
 	scaled_im_ = cv::Mat(h, w, CV_8UC1);
 
-	object_model_ = new KinectSimulator(cam_info, 
+	object_models_ = new KinectSimulator(cam_info, 
 					    object_paths, 
 					    dot_path, 
 					    background, 
@@ -98,7 +98,7 @@ namespace render_kinect {
       }
 
     ~Simulate() {
-      delete object_model_;
+      delete object_models_;
     }
 
     void simulateStoreMeasurement(const std::vector<Eigen::Affine3d> &new_tfs, 
@@ -112,7 +112,7 @@ namespace render_kinect {
 
       // simulate measurement of object and store in image, point cloud and labeled image
       cv::Mat p_result;
-      object_model_->intersect(transforms_, point_cloud_, depth_im_, labels_);
+      object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_im_, labels_);
       
       // in case object is not in view, don't store any data
       // However, if background is used, there will be points in the point cloud
@@ -144,8 +144,13 @@ namespace render_kinect {
 
       // simulate measurement of object and store in image, point cloud and labeled image
       cv::Mat p_result;
-      object_model_->intersect(transforms_, point_cloud_, depth_im_, labels_);      
+      object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_im_, labels_);      
       
+      double min_val, max_val;
+      minMaxLoc(rgb_vals_, &min_val, &max_val);
+
+      //      std::cout << "Min and Max value of rgb " << min_val << " " << max_val << std::endl;
+
       // in case object is not in view, don't store any data
       // However, if background is used, there will be points in the point cloud
       // although they don't belong to the object
@@ -169,8 +174,6 @@ namespace render_kinect {
 
       // publish point cloud
       publishPointCloud(time);
-
-
     }
 
   private:
@@ -178,7 +181,7 @@ namespace render_kinect {
     void publishCameraInfo (ros::Time time)
     {
       if (pub_cam_info_.getNumSubscribers () > 0)
-	pub_cam_info_.publish (object_model_->getCameraInfo (time));
+	pub_cam_info_.publish (object_models_->getCameraInfo (time));
     }
 
     void storeDepthImage (std::string prefix, 
@@ -220,7 +223,6 @@ namespace render_kinect {
     
     void publishPointCloud(ros::Time time)
     {
-
       sensor_msgs::PointCloud2Ptr points = boost::make_shared<sensor_msgs::PointCloud2 > ();
       points->header.frame_id = frame_id_;
       points->header.stamp = time;
@@ -228,10 +230,11 @@ namespace render_kinect {
       points->height       = 1;
       points->is_dense     = true;
       points->is_bigendian = false;
-      points->fields.resize( 3 );
+      points->fields.resize( 3+1 );
       points->fields[0].name = "x"; 
       points->fields[1].name = "y"; 
       points->fields[2].name = "z";
+      points->fields[3].name = "rgb"; 
       int offset = 0;
       for (size_t d = 0; 
 	   d < points->fields.size (); 
@@ -258,6 +261,10 @@ namespace render_kinect {
 		&point[1], sizeof (float));
 	memcpy (&points->data[ i * points->point_step + points->fields[2].offset], 
 		&point[2], sizeof (float));
+
+	const float* rgb = rgb_vals_.ptr<float>(i);
+	memcpy (&points->data[ i * points->point_step + points->fields[3].offset], 
+		&rgb[0], sizeof (float));
       }
 
       if (  pub_point_cloud_.getNumSubscribers () > 0)
@@ -315,7 +322,7 @@ namespace render_kinect {
       lD << out_path_ << prefix << std::setw(3)
 	 << std::setfill('0') << count << ".pcd";
 
-      pcl::PointCloud<pcl::PointXYZ> cloud;
+      pcl::PointCloud<pcl::PointXYZRGB> cloud;
       // Fill in the cloud data
       cloud.width = point_cloud_.rows;
       cloud.height = 1;
@@ -324,9 +331,11 @@ namespace render_kinect {
 	
       for (int i = 0; i < point_cloud_.rows; i++) {
 	const float* point = point_cloud_.ptr<float>(i);
+	const float* rgb = rgb_vals_.ptr<float>(i);
 	cloud.points[i].x = point[0];
 	cloud.points[i].y = point[1];
 	cloud.points[i].z = point[2];
+	cloud.points[i].rgb = rgb[0];
       }
 	
       if (pcl::io::savePCDFileBinary(lD.str(), cloud) != 0)
@@ -337,8 +346,8 @@ namespace render_kinect {
 #endif
     }
     
-    KinectSimulator *object_model_;
-    cv::Mat depth_im_, scaled_im_, point_cloud_, labels_;
+    KinectSimulator *object_models_;
+    cv::Mat depth_im_, scaled_im_, point_cloud_, labels_, rgb_vals_;
     std::string out_path_;
     std::string frame_id_;
     std::vector<Eigen::Affine3d> transforms_; 

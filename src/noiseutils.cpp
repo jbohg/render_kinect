@@ -25,7 +25,7 @@
 #include <libnoise/interp.h>
 #include <libnoise/mathconsts.h>
 
-#include <render_kinect/noiseutils.h>
+#include <render_kinect/tools/noiseutils.h>
 
 using namespace noise;
 using namespace noise::model;

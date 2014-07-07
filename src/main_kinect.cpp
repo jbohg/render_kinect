@@ -73,6 +73,8 @@ int main(int argc, char **argv)
     std::cerr << "Usage: " << argv[0] << " model_file.obj" << std::endl;
     exit(-1);
   }
+
+  ros::init(argc, argv, "render_object");
   
   // Get the path to the object mesh model.
   std::string path = ros::package::getPath("render_kinect");
