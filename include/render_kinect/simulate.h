@@ -43,6 +43,11 @@
 
 #include <visualization_msgs/Marker.h>
 
+// for publishing TF frames
+#include <tf/tf.h>
+#include <tf_conversions/tf_eigen.h>
+#include <tf/transform_broadcaster.h>
+
 #ifdef HAVE_PCL
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -163,6 +168,9 @@ namespace render_kinect {
       // get the current time for synchronisation of all messages
       ros::Time time = ros::Time::now ();
 
+      // publish TF frames
+      publishTransforms(time);
+
       // publish marker for background
       //publishMarker(time);
       
@@ -174,6 +182,7 @@ namespace render_kinect {
 
       // publish point cloud
       publishPointCloud(time);
+
     }
 
   private:
@@ -313,6 +322,28 @@ namespace render_kinect {
       vis_pub.publish( marker );
     }
 
+    void publishTransforms(ros::Time time)
+    {
+      // for naming
+      std::stringstream obj_frame_id;
+      int count = 0;
+
+      tf::Transform transform;
+      std::vector<Eigen::Affine3d>::const_iterator it;
+      for(it=transforms_.begin(); it!=transforms_.end(); ++it)
+	{
+	  obj_frame_id.str(std::string());
+	  obj_frame_id << "OBJECT" << std::setw(3) << std::setfill('0') << count;
+	  count++;
+
+	  tf::transformEigenToTF(*it, transform);
+	  ground_truth_.sendTransform(tf::StampedTransform(transform, 
+							   time, 
+							   frame_id_, 
+							   obj_frame_id.str())); 
+	}
+    }
+
     void storePointCloud(std::string prefix, 
 			 int count)
     {
@@ -360,6 +391,7 @@ namespace render_kinect {
     image_transport::ImageTransport* it_;
     image_transport::Publisher pub_depth_image_;
     ros::Publisher pub_point_cloud_;
+    tf::TransformBroadcaster ground_truth_;
 
     // Debugging Visualisation
     std::string room_path_;

@@ -16,6 +16,8 @@ find_package(catkin REQUIRED
     visualization_msgs
     image_transport
     cv_bridge
+    tf
+    tf_conversions
   )
 
 # There exist different versions of the assimp library for different 
@@ -106,6 +108,8 @@ catkin_package(
     image_transport 
     roscpp 
     cv_bridge
+    tf
+    tf_conversions
   DEPENDS OpenCV eigen 
 )
 

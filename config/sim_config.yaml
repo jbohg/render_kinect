@@ -1,3 +1,3 @@
 #For each object instance in the scene, point to mesh in 
 # $(find render_kinect)/obj_models/
-object_file_names: [wheel.obj, wheel.obj, wheel.obj, wheel.obj, wheel.obj, wheel.obj]
+object_file_names: [wheel.obj, wheel.obj]
