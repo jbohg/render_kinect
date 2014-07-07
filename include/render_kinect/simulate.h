@@ -152,6 +152,9 @@ namespace render_kinect {
 
       // get the current time for synchronisation of all messages
       ros::Time time = ros::Time::now ();
+
+      // publish marker for background
+      //publishMarker(time);
       
       // publish camera info
       publishCameraInfo(time);
@@ -162,8 +165,6 @@ namespace render_kinect {
       // publish point cloud
       publishPointCloud(time);
 
-      // publish marker
-      publishMarker(time);
 
     }
 
@@ -267,14 +268,26 @@ namespace render_kinect {
       marker.ns = "my_namespace";
       marker.id = 0;
       marker.action = visualization_msgs::Marker::ADD;
-      
+
+      /*
       marker.pose.position.x = 0.0;
+      marker.pose.position.y = 1.0;
+      marker.pose.position.z = 0.0;
+      marker.pose.orientation.x = 1.0;
+      marker.pose.orientation.y = 0.0;
+      marker.pose.orientation.z = 0.5;
+      marker.pose.orientation.w = 1.0;
+      */
+
+      marker.pose.position.x = -1.0;
       marker.pose.position.y = 0.0;
       marker.pose.position.z = -1.0;
-      marker.pose.orientation.w = 1.0;
+      
       marker.pose.orientation.x = 0.0;
-      marker.pose.orientation.y = 0.0;
+      marker.pose.orientation.y = 0.5;
       marker.pose.orientation.z = 0.0;
+      marker.pose.orientation.w = 1.0;
+      
 
       marker.scale.x = 1.0;
       marker.scale.y = 1.0;
@@ -284,7 +297,7 @@ namespace render_kinect {
       marker.color.g = 1.0;
       marker.color.b = 0.0;
       marker.type = visualization_msgs::Marker::MESH_RESOURCE;
-      marker.mesh_resource = "package://render_kinect/obj_models/room0.obj";
+      marker.mesh_resource = "package://render_kinect/obj_models/room0_flipped.obj";
       vis_pub.publish( marker );
     }
 

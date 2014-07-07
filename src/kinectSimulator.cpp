@@ -194,9 +194,13 @@ namespace render_kinect {
       room_->uploadIndices(search_, last_t, last_v);
       room_->uploadPartIDs(search_, last_t, 0);
 
-      // test best room transformation
+      // hard-coded room transformation 
+      // TODO: DEBUG by displaying markers based on teh current transform in RVIZ
       Eigen::Affine3d transform(Eigen::Affine3d::Identity());
-      transform.translate(Eigen::Vector3d(0.0, 0.0, -1.0));
+      transform.translate(Eigen::Vector3d(-1.0, 0.0, -1.0));
+      //Eigen::Quaterniond quat;
+      //quat.w() = 1.0; quat.x() = 1.0; quat.y() = 0.0; quat.z() = 0.0;
+      transform.rotate(Eigen::Quaterniond(1.0, 0.0, 0.5, 0.0)); // w x y z
       room_->updateTransformation(transform);
     }
 

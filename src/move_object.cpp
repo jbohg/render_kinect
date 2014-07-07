@@ -38,6 +38,8 @@
  */
 
 #include <render_kinect/simulate.h>
+#include <render_kinect/random_process.h>
+#include <render_kinect/wiener_process.h>
 #include <render_kinect/camera.h>
 #include <render_kinect/yamlutils.h>
 
@@ -45,24 +47,6 @@
 
 #include <iostream>
 #include <fstream>
-
-/* Sampling of random 6DoF transformations. */
-void getRandomTransform(const double &p_x,
-			const double &p_y,
-			const double &p_z,
-			const double &p_angle,
-			Eigen::Affine3d &p_tf)
-{
-  Eigen::Vector3d axis(((double)(rand()%1000))/1000.0,
-		       ((double)(rand()%1000))/1000.0,
-		       ((double)(rand()%1000))/1000.0);
-  Eigen::Vector3d t(p_x*(double)(rand()%2000 -1000)/1000,
-		    p_y*(double)(rand()%2000 -1000)/1000,
-		    p_z*(double)(rand()%2000 -1000)/1000);
-  p_tf = Eigen::Affine3d::Identity();
-  p_tf.translate(t);
-  p_tf.rotate(Eigen::AngleAxisd( p_angle*(double)(rand()%2000 - 1000)/1000, axis));
-}
 
 void getDotPatternPath(std::string &pkg_path, 
 		       std::string &dot_pattern_path)
@@ -106,7 +90,7 @@ void getRoomPath(std::string &pkg_path,
 		 std::string &room_path)
 {
   // Get the path to the object mesh model.
-  std::string room_mesh = "/obj_models/room0.dae";
+  std::string room_mesh = "/obj_models/room0_flipped.obj";
   std::stringstream full_path;
   full_path << pkg_path << room_mesh;
   room_path = full_path.str();
@@ -233,11 +217,6 @@ int main(int argc, char **argv)
   render_kinect::CameraInfo cam_info;
   getCameraInfo(nh, cam_info);
 
-  // Test Transform
-  Eigen::Affine3d transform(Eigen::Affine3d::Identity());
-  transform.translate(Eigen::Vector3d(0.089837, -0.137769, 0.949210));
-  transform.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
-
   // Kinect Simulator
   render_kinect::Simulate Simulator(cam_info, 
 				    object_mesh_path, 
@@ -248,13 +227,21 @@ int main(int argc, char **argv)
   // Number of samples
   int frames = 50;
 
+  // Initial Test Transform of Objects
+  Eigen::Affine3d transform(Eigen::Affine3d::Identity());
+  transform.translate(Eigen::Vector3d(0.089837, -0.137769, 1.949210));
+  transform.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
+  
+  // object state and process model and noise variances
+  //render_kinect::RandomProcess object_process(transform,0.02,0.02,0.02,0.05);
+  render_kinect::WienerProcess object_process(transform,0.01,0.01,0.01,0.05);
+
   // Storage of random transform
-  Eigen::Affine3d noise;
+  Eigen::Affine3d current_tf;
   for(int i=0; i<frames; ++i) {
     
-    // sample noisy transformation around initial one
-    getRandomTransform(0.02,0.02,0.02,0.05,noise);
-    Eigen::Affine3d current_tf = noise*transform;
+    // get the next state of object according to the chosen process model
+    object_process.getNextTransform(current_tf);
     
     // give pose and object name to renderer
     Simulator.simulatePublishMeasurement(current_tf);
