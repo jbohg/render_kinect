@@ -118,9 +118,10 @@ catkin_package(
 ###########
 
 include_directories(include)
+file(GLOB_RECURSE HEADERS include/*.hpp include/*.h)
 
-add_library(${PROJECT_NAME} src/kinectSimulator.cpp src/noiseutils.cpp)
-target_link_libraries(${PROJECT_NAME} assimp CGAL noise ${LIBS} ${catkin_LIBRARIES}) 
+add_library(${PROJECT_NAME} src/kinectSimulator.cpp src/noiseutils.cpp ${HEADERS})
+target_link_libraries(${PROJECT_NAME} assimp CGAL noise ${LIBS} ${catkin_LIBRARIES})
 
 add_executable(render_object src/main_kinect.cpp)
 target_link_libraries(render_object ${PROJECT_NAME} ${catkin_LIBRARIES})

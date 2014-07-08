@@ -149,7 +149,11 @@ namespace render_kinect {
 
       // simulate measurement of object and store in image, point cloud and labeled image
       cv::Mat p_result;
-      object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_im_, labels_);      
+      object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_im_, labels_);
+
+
+
+
       
       double min_val, max_val;
       minMaxLoc(rgb_vals_, &min_val, &max_val);
@@ -219,11 +223,25 @@ namespace render_kinect {
       // cv::minMaxLoc(depth_im_, &min_val, &max_val);
       // ROS_INFO("Minimum and Maximum Depth Value: %f %f", min_val, max_val);
 
+      cv::Mat depth_im_32f; // we have to convert the image to the appropriate encoding
+      depth_im_.convertTo(depth_im_32f, CV_32FC1);
+
       cv_bridge::CvImage cv_img;
       cv_img.header.stamp = time;
       cv_img.header.frame_id = frame_id_;
       cv_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-      cv_img.image = depth_im_;
+      cv_img.image = depth_im_32f;
+
+
+
+
+//      double min_val, max_val;
+//      minMaxLoc(depth_im_32f, &min_val, &max_val);
+//      std::cout << "min: " << min_val << "   max: " << max_val << std::endl;
+//      cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
+//      cv::imshow( "Display window", depth_im_32f );                   // Show our image inside it.
+//      cv::waitKey(0);
+//      exit(-1);
 
       if (pub_depth_image_.getNumSubscribers () > 0)
 	pub_depth_image_.publish (cv_img.toImageMsg());
