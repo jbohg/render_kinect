@@ -135,8 +135,8 @@ int main(int argc, char **argv)
     transform.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
 
     // object state and process model and noise variances
-    double translate_var = 0.01;
-    double rotate_var = 0.05;
+    double translate_var = 0.001;
+    double rotate_var = 0.005;
     std::vector<render_kinect::WienerProcess> object_processes;
 
     getProcessModels((int)object_mesh_paths.size(),
@@ -159,12 +159,15 @@ int main(int argc, char **argv)
         sensor_msgs::CameraInfoPtr camera_info;
         Simulator.simulateMeasurement(object_poses, image, camera_info);
 
-        Eigen::VectorXd state;
+        FloatingBodySystem<-1> state(object_poses.size());
+        for(size_t i = 0; i < object_poses.size(); i++)
+            state.pose(object_poses[i], i);
 
-        dataset.addFrame(image, camera_info, state);
+        dataset.addFrame(image, camera_info, state.poses());
 
         ROS_INFO("Rendering %d\n", i);
     }
+    dataset.stOre();
 
     return 0;
 }

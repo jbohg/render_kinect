@@ -191,8 +191,6 @@ namespace render_kinect {
     }
 
 
-
-
     void simulateMeasurement(const std::vector<Eigen::Affine3d>& new_tfs,
                              sensor_msgs::ImagePtr& image,
                              sensor_msgs::CameraInfoPtr& camera_info)
