@@ -1,3 +1,6 @@
 #For each object instance in the scene, point to mesh in 
 # $(find render_kinect)/obj_models/
 object_file_names: [wheel.obj, wheel.obj]
+
+room_trans: [-1.5, 0.0, 1.0]
+room_quat:  [0.0, 0.530669, 0.379049, 0.758098]

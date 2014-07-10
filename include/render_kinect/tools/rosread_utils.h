@@ -82,10 +82,36 @@ namespace rosread_utils {
 		   std::string &room_path)
   {
     // Get the path to the object mesh model.
-    std::string room_mesh = "/obj_models/room0_flipped.obj";
+    std::string room_mesh = "/obj_models/room0.obj";
     std::stringstream full_path;
     full_path << pkg_path << room_mesh;
     room_path = full_path.str();
+  }
+
+  void getRoomTransform(ros::NodeHandle &nh,
+			std::string &pkg_path,
+			Eigen::Affine3d &room_tf)
+  {
+    room_tf = Eigen::Affine3d::Identity();
+    std::vector<float> trans;
+    if(nh.getParam("room_trans", trans)) {
+      if(trans.size()==3) {
+	room_tf.translate(Eigen::Vector3d(trans[0], trans[1], trans[2]));
+      } else {
+	ROS_ERROR("Room Translation does not have three components in config file.");
+	exit(-1);
+      }
+    }
+
+    std::vector<float> quat;
+    if(nh.getParam("room_quat", quat)) {
+      if(quat.size()==4) {
+	room_tf.rotate(Eigen::Quaterniond(quat[0], quat[1], quat[2], quat[3]));
+      } else {
+	ROS_ERROR("Room Quaternion does not have four components in config file.");
+	exit(-1);
+      }
+    }
   }
 
   void getCameraInfo(ros::NodeHandle &nh,
