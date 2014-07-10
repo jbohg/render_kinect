@@ -62,6 +62,7 @@
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
 
+
 static unsigned countf = 0;
 
 namespace render_kinect {
@@ -188,6 +189,66 @@ namespace render_kinect {
       publishPointCloud(time);
 
     }
+
+
+
+
+    void simulateMeasurement(const std::vector<Eigen::Affine3d>& new_tfs,
+                             sensor_msgs::ImagePtr& image,
+                             sensor_msgs::CameraInfoPtr& camera_info)
+    {
+        countf++;
+        // update old transform
+        transforms_ = new_tfs;
+        // simulate measurement of object and store in image, point cloud and labeled image
+        object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_im_, labels_);
+
+        // get the current time for synchronisation of all messages
+        static ros::Time time = ros::Time::now();
+
+
+        camera_info = object_models_->getCameraInfo(time);
+
+
+        cv::Mat depth_im_32f; // we have to convert the image to the appropriate encoding
+        depth_im_.convertTo(depth_im_32f, CV_32FC1);
+
+        cv_bridge::CvImage cv_img;
+        cv_img.header.stamp = time;
+        cv_img.header.frame_id = frame_id_;
+        cv_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+        cv_img.image = depth_im_32f;
+
+        image = cv_img.toImageMsg();
+
+
+        // publish TF frames
+        publishTransforms(time);
+
+        // publish marker for background
+        //publishMarker(time);
+
+        // publish camera info
+        publishCameraInfo(time);
+
+        // publish depth image
+        publishDepthImage(time);
+
+        // publish point cloud
+        publishPointCloud(time);
+
+
+        time += ros::Duration(1./30.);
+
+
+
+    }
+
+
+
+
+
+
 
   private:
 

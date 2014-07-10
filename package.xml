@@ -50,6 +50,8 @@
   <build_depend>cv_bridge</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>tf_conversions</build_depend>
+  <build_depend>state_filtering</build_depend>
+
   
   <run_depend>roslib</run_depend>
   <run_depend>message_runtime</run_depend>
@@ -60,6 +62,8 @@
   <run_depend>cv_bridge</run_depend>
   <run_depend>tf</run_depend>
   <run_depend>tf_conversions</run_depend>
+  <run_depend>state_filtering</run_depend>
+
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

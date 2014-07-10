@@ -18,6 +18,7 @@ find_package(catkin REQUIRED
     cv_bridge
     tf
     tf_conversions
+    state_filtering
   )
 
 # There exist different versions of the assimp library for different 
@@ -110,6 +111,7 @@ catkin_package(
     cv_bridge
     tf
     tf_conversions
+    state_filtering
   DEPENDS OpenCV eigen 
 )
 
@@ -118,6 +120,7 @@ catkin_package(
 ###########
 
 include_directories(include)
+include_directories(${catkin_INCLUDE_DIRS})
 file(GLOB_RECURSE HEADERS include/*.hpp include/*.h)
 
 add_library(${PROJECT_NAME} src/kinectSimulator.cpp src/noiseutils.cpp ${HEADERS})
@@ -128,3 +131,6 @@ target_link_libraries(render_object ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 add_executable(move_object src/move_object.cpp)
 target_link_libraries(move_object ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
+
+add_executable(generate_dataset src/generate_dataset.cpp)
+target_link_libraries(generate_dataset ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
