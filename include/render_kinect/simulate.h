@@ -74,11 +74,13 @@ namespace render_kinect {
 	   std::vector<std::string> &object_paths, 
 	   std::string dot_path, 
 	   bool background = false,
-	   std::string room_path = "") 
+	   std::string room_path = "", 
+	   const Eigen::Affine3d &room_tf = Eigen::Affine3d()) 
     : out_path_("/tmp/") 
       ,  priv_nh_("~")
       ,  frame_id_( cam_info.frame_id_)
       ,  room_path_(room_path)
+      ,  room_tf_(room_tf)
       {
 	// allocate memory for depth image
 	int w = cam_info.width_;
@@ -88,10 +90,11 @@ namespace render_kinect {
 	scaled_im_ = cv::Mat(h, w, CV_8UC1);
 
 	object_models_ = new KinectSimulator(cam_info, 
-					    object_paths, 
-					    dot_path, 
-					    background, 
-					    room_path);
+					     object_paths, 
+					     dot_path, 
+					     background, 
+					     room_path,
+					     room_tf);
 
 	// initialize all publishers
 	it_ = new image_transport::ImageTransport(priv_nh_);
@@ -177,8 +180,8 @@ namespace render_kinect {
       publishTransforms(time);
 
       // publish marker for background
-      //publishMarker(time);
-      
+      // publishMarker(time);
+
       // publish camera info
       publishCameraInfo(time);
 
@@ -364,27 +367,19 @@ namespace render_kinect {
       marker.header.frame_id = frame_id_;
       marker.header.stamp = time;
       marker.ns = "my_namespace";
-      marker.id = 0;
+      marker.id = 10;
       marker.action = visualization_msgs::Marker::ADD;
 
-      /*
-      marker.pose.position.x = 0.0;
-      marker.pose.position.y = 1.0;
-      marker.pose.position.z = 0.0;
-      marker.pose.orientation.x = 1.0;
-      marker.pose.orientation.y = 0.0;
-      marker.pose.orientation.z = 0.5;
-      marker.pose.orientation.w = 1.0;
-      */
-
-      marker.pose.position.x = -1.0;
-      marker.pose.position.y = 0.0;
-      marker.pose.position.z = -1.0;
+      marker.pose.position.x = room_tf_.translation()[0];
+      marker.pose.position.y = room_tf_.translation()[1];
+      marker.pose.position.z = room_tf_.translation()[2];
       
-      marker.pose.orientation.x = 0.0;
-      marker.pose.orientation.y = 0.5;
-      marker.pose.orientation.z = 0.0;
-      marker.pose.orientation.w = 1.0;
+      Eigen::Quaterniond q = (Eigen::Quaterniond)room_tf_.linear();
+
+      marker.pose.orientation.w = q.w();
+      marker.pose.orientation.x = q.x();
+      marker.pose.orientation.y = q.y();
+      marker.pose.orientation.z = q.z();
       
 
       marker.scale.x = 1.0;
@@ -395,7 +390,7 @@ namespace render_kinect {
       marker.color.g = 1.0;
       marker.color.b = 0.0;
       marker.type = visualization_msgs::Marker::MESH_RESOURCE;
-      marker.mesh_resource = "package://render_kinect/obj_models/room0_flipped.obj";
+      marker.mesh_resource = "package://render_kinect/obj_models/room0.obj";
       vis_pub.publish( marker );
     }
 
@@ -472,6 +467,7 @@ namespace render_kinect {
 
     // Debugging Visualisation
     std::string room_path_;
+    Eigen::Affine3d room_tf_; 
     ros::Publisher vis_pub;
     
   };

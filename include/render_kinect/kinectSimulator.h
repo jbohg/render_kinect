@@ -70,6 +70,7 @@ namespace render_kinect
     // background structure
     bool render_bg_;
     boost::shared_ptr<ObjectMeshModel> room_;
+    Eigen::Affine3d room_tf_;
 
     Camera camera_;
     static const float invalid_disp_ = 99999999.9;
@@ -105,7 +106,7 @@ namespace render_kinect
   public:
     
     std::vector<cv::Scalar> color_map_;
-    static const uchar background_ = 60;
+    static const uchar background_ = 160;
 
     unsigned getNumMeshes ()const{return models_.size();};
 	
@@ -123,9 +124,9 @@ namespace render_kinect
 		    std::vector<std::string> &object_paths,
 		    std::string dot_path,
 		    bool background,
-		    std::string room_path);
+		    std::string room_path,
+		    const Eigen::Affine3d &room_tf);
     ~KinectSimulator();
-
    
   };
 }//namespace render_kinect

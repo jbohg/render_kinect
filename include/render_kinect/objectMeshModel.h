@@ -106,18 +106,6 @@ namespace render_kinect
 	  numVertices_ += scene_->mMeshes[m]->mNumVertices;
 	}
 
-	
-	/*
-	if(scene_->mNumMeshes>1)
-	  {
-	    std::cout << "Object " << object_path << " consists of more than one mesh." << std::endl;
-	    exit(-1);
-	  }
-
-	numFaces_ = scene_->mMeshes[0]->mNumFaces;
-	numVertices_ = scene_->mMeshes[0]->mNumVertices;
-	*/
-
 	std::cout << "adding " << scene_->mNumMeshes 
 		  << " meshes with " << numFaces_ 
 		  << " faces and " << numVertices_ 
@@ -136,16 +124,7 @@ namespace render_kinect
 		vertices_(3,v_idx) = 1;
 	      }
 	  }
-	/*
-	vertices_.resize(4,numVertices_);
-	for(unsigned v=0;v<numVertices_;++v)
-	    {
-	      vertices_(0,v) = scene_->mMeshes[0]->mVertices[v].x;
-	      vertices_(1,v) = scene_->mMeshes[0]->mVertices[v].y;
-	      vertices_(2,v) = scene_->mMeshes[0]->mVertices[v].z;
-	      vertices_(3,v) = 1;
-	    }
-	*/
+
 	original_transform_ = Eigen::Affine3d::Identity();
       }
    

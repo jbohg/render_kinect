@@ -99,17 +99,19 @@ namespace render_kinect {
 				   std::vector<std::string> &object_paths,
 				   std::string dot_path,
 				   bool background,
-				   std::string room_path) 
+				   std::string room_path,
+				   const Eigen::Affine3d &room_tf) 
     : render_bg_(background)
     , camera_( p_camera_info)
     , noise_type_(p_camera_info.noise_)
     , noise_gen_(NULL)
     , noisy_labels_(0)
+    , room_tf_(room_tf)
   {
     
     if(render_bg_)
       std::cout << "Background rendering with " << room_path << std::endl;
-    
+
     std::cout << "Width and Height: " << p_camera_info.width_ << "x"
 	      << p_camera_info.height_ << std::endl;
     std::cout << "Loading models for "<<  object_paths.size() << " objects " <<  std::endl;
@@ -215,16 +217,8 @@ namespace render_kinect {
     for(it=models_.begin();it!=models_.end();++it)
       (*it)->updateTransformation(p_transforms[it-models_.begin()]);
     
-    if(render_bg_) {
-      // hard-coded room transformation 
-      // TODO: DEBUG by displaying markers based on the current transform in RVIZ
-      Eigen::Affine3d transform(Eigen::Affine3d::Identity());
-      transform.translate(Eigen::Vector3d(-1.0, 0.0, -1.0));
-      //Eigen::Quaterniond quat;
-      //quat.w() = 1.0; quat.x() = 1.0; quat.y() = 0.0; quat.z() = 0.0;
-      transform.rotate(Eigen::Quaterniond(1.0, 0.0, 0.5, 0.0)); // w x y z
-      room_->updateTransformation(transform);
-    }
+    if(render_bg_)
+      room_->updateTransformation(room_tf_);
   }
   
   // Function that triggers AABB tree update by exchanging old vertices 
@@ -246,12 +240,13 @@ namespace render_kinect {
       room_->uploadVertices(search_, last_v);
       room_->uploadIndices(search_, last_t, last_v);
       room_->uploadPartIDs(search_, last_t, color_map_.size()-1);
+      
     }
 
     search_->tree.rebuild(search_->triangles.begin(), search_->triangles.end());
     search_->tree.accelerate_distance_queries();
   }
-  
+
   // Function that intersects rays with the object model at current state.
   void KinectSimulator::intersect(const std::vector<Eigen::Affine3d> &p_transforms, 
 				  cv::Mat &point_cloud,
