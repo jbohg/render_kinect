@@ -168,6 +168,8 @@ namespace rosread_utils {
       cam_info.noise_ = render_kinect::GAUSSIAN;
     } else if (noise.compare("PERLIN")==0) {
       cam_info.noise_ = render_kinect::PERLIN;
+    } else if (noise.compare("SIMPLEX")==0) {
+      cam_info.noise_ = render_kinect::SIMPLEX;
     } else {
       ROS_ERROR("Given noise type invalid: %s\n", noise.c_str());
       exit(-1);

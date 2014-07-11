@@ -163,8 +163,8 @@ int main(int argc, char **argv)
         Simulator.simulateMeasurement(object_poses, image, camera_info);
 
         FloatingBodySystem<-1> state(object_poses.size());
-        for(size_t i = 0; i < object_poses.size(); i++)
-            state.pose(object_poses[i], i);
+        for(size_t j = 0; j < object_poses.size(); j++)
+            state.pose(object_poses[j], j);
 
         dataset.addFrame(image, camera_info, state.poses());
 
