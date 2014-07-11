@@ -114,17 +114,19 @@ int main(int argc, char **argv)
     // Get the path of the room (background mesh)
     std::string room_path;
     rosread_utils::getRoomPath(path, room_path);
+    Eigen::Affine3d room_tf;
+    rosread_utils::getRoomTransform(nh, path, room_tf);
 
     // Get the camera info
     render_kinect::CameraInfo cam_info;
     rosread_utils::getCameraInfo(nh, cam_info);
 
-    // Kinect Simulator
     render_kinect::Simulate Simulator(cam_info,
                                       object_mesh_paths,
                                       dot_pattern_path,
                                       rosread_utils::renderBackground(nh),
-                                      room_path);
+                                      room_path,
+                                      room_tf);
 
     // Number of samples
     int frames = 100;
@@ -148,6 +150,7 @@ int main(int argc, char **argv)
                      object_processes);
 
     TrackingDataset dataset(path_dataset.string());
+    ROS_INFO("Rendering frame: ");
     for(int i=0; i<frames; ++i)
     {
         // get the next state of object according to the chosen process model
@@ -165,8 +168,9 @@ int main(int argc, char **argv)
 
         dataset.addFrame(image, camera_info, state.poses());
 
-        ROS_INFO("Rendering %d\n", i);
+        ROS_INFO("%d, ", i);
     }
+    ROS_INFO("\n");
     dataset.stOre();
 
     return 0;
