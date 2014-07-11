@@ -187,7 +187,7 @@ namespace render_kinect {
 	noise_gen_ = new GaussianNoise( camera_.getWidth(), camera_.getHeight(), mean, std);
       } else if (noise_type_==PERLIN) 
       {
-	float scale = 0.999;
+	float scale = 0.4;
 	noise_gen_ = new PerlinNoise( camera_.getWidth(), camera_.getHeight(), scale);
       } else if (noise_type_==SIMPLEX) 
       {
