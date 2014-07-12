@@ -49,12 +49,22 @@
 
 #include <state_filtering/tools/tracking_dataset.hpp>
 #include <state_filtering/system_states/floating_body_system.hpp>
+#include <state_filtering/tools/helper_functions.hpp>
+
+
+#include <state_filtering/process_model/stationary_process_model.hpp>
+#include <state_filtering/process_model/composed_stationary_process_model.hpp>
+#include <state_filtering/process_model/brownian_process_model.hpp>
 
 // Mostly reading tools
 #include <render_kinect/tools/rosread_utils.h>
 
+#include <math.h>
+
 
 using namespace std;
+using namespace Eigen;
+using namespace filter;
 
 // Generate a process models for each object instance in the scene
 void getProcessModels(int n_objects, 
@@ -68,9 +78,9 @@ void getProcessModels(int n_objects,
     // create a Random Process to sample
     // pertubation around initial transform
     render_kinect::RandomProcess rand_proc(init_transform,
-                                           var_x,
-                                           var_y,
-                                           var_z,
+                                           0.5,
+                                           0.5,
+                                           0,
                                            var_angle);
 
     for(int i=0; i<n_objects; ++i)
@@ -91,18 +101,18 @@ int main(int argc, char **argv)
 {
     // initialize ros
     ros::init(argc, argv, "move_object");
-    ros::NodeHandle nh("~");
+    ros::NodeHandle node_handle("~");
 
     // get the path to the package
     std::string path = ros::package::getPath("render_kinect");
 
     // the path of our dataset will be the same as the config file
-    string config_file; nh.getParam("config_file", config_file);
+    string config_file; node_handle.getParam("config_file", config_file);
     boost::filesystem::path path_dataset = config_file;
     path_dataset = path_dataset.parent_path();
 
     // the object model has to be inside our dataset folder
-    std::vector<std::string> object_filenames; nh.getParam("object_file_names", object_filenames);
+    std::vector<std::string> object_filenames; node_handle.getParam("object_file_names", object_filenames);
     std::vector<std::string> object_mesh_paths;
     for(size_t object_index = 0; object_index < object_filenames.size(); object_index++)
         object_mesh_paths.push_back((path_dataset / object_filenames[object_index]).string());
@@ -115,25 +125,24 @@ int main(int argc, char **argv)
     std::string room_path;
     rosread_utils::getRoomPath(path, room_path);
     Eigen::Affine3d room_tf;
-    rosread_utils::getRoomTransform(nh, path, room_tf);
+    rosread_utils::getRoomTransform(node_handle, path, room_tf);
 
     // Get the camera info
     render_kinect::CameraInfo cam_info;
-    rosread_utils::getCameraInfo(nh, cam_info);
+    rosread_utils::getCameraInfo(node_handle, cam_info);
 
     render_kinect::Simulate Simulator(cam_info,
                                       object_mesh_paths,
                                       dot_pattern_path,
-                                      rosread_utils::renderBackground(nh),
+                                      rosread_utils::renderBackground(node_handle),
                                       room_path,
                                       room_tf);
 
-    // Number of samples
-    int frames = 100;
+
 
     // Initial Transform for objects
     Eigen::Affine3d transform(Eigen::Affine3d::Identity());
-    transform.translate(Eigen::Vector3d(0.089837, -0.137769, 1.549210));
+    transform.translate(Eigen::Vector3d(0., 0., 1.3));
     transform.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
 
     // object state and process model and noise variances
@@ -149,27 +158,87 @@ int main(int argc, char **argv)
                      rotate_var,
                      object_processes);
 
-    TrackingDataset dataset(path_dataset.string());
-    ROS_INFO("Rendering frame: ");
-    for(int i=0; i<frames; ++i)
+
+
+
+    // create process model
+    double linear_acceleration_sigma;
+    node_handle.getParam("linear_acceleration_sigma", linear_acceleration_sigma);
+    double angular_acceleration_sigma;
+    node_handle.getParam("angular_acceleration_sigma", angular_acceleration_sigma);
+    double damping;
+    node_handle.getParam("damping", damping);
+    vector<double> rotation_center;
+    node_handle.getParam("rotation_center", rotation_center);
+
+
+
+
+    MatrixXd linear_acceleration_covariance = MatrixXd::Identity(3, 3) * pow(double(linear_acceleration_sigma), 2);
+    MatrixXd angular_acceleration_covariance = MatrixXd::Identity(3, 3) * pow(double(angular_acceleration_sigma), 2);
+
+    vector<boost::shared_ptr<StationaryProcess<> > > partial_process_models(object_mesh_paths.size());
+    for(size_t i = 0; i < partial_process_models.size(); i++)
     {
-        // get the next state of object according to the chosen process model
-        std::vector<Eigen::Affine3d> object_poses(object_processes.size());
-        for(std::vector<render_kinect::WienerProcess>::iterator it=object_processes.begin(); it!=object_processes.end(); ++it)
-            it->getNextTransform(object_poses[it-object_processes.begin()]);
+        boost::shared_ptr<BrownianProcessModel<> > partial_process_model(new BrownianProcessModel<>);
+        partial_process_model->parameters(hf::Std2Eigen(rotation_center),
+                                          damping,
+                                          linear_acceleration_covariance,
+                                          angular_acceleration_covariance);
+        partial_process_models[i] = partial_process_model;
+    }
+    boost::shared_ptr<StationaryProcess<> > process_model(new ComposedStationaryProcessModel(partial_process_models));
+
+    double horizontal_ratio = tan(0.995/2.); //rad
+    double vertical_ratio = tan(0.75/2.);
+    double desired_depth; node_handle.getParam("desired_depth", desired_depth);
+
+    cout << "ratios: " << endl;
+    cout << horizontal_ratio << endl;
+    cout << vertical_ratio << endl;
+
+
+    FloatingBodySystem<-1> state(object_mesh_paths.size());
+    for(size_t i = 0; i < state.bodies_size(); i++)
+        state.position(i) = Vector3d((double(rand())/RAND_MAX - 0.5), (double(rand())/RAND_MAX - 0.5), desired_depth);
+
+    cout << "depth " << desired_depth << endl;
+
+
+    TrackingDataset dataset(path_dataset.string());
+
+    int frame_count; node_handle.getParam("frame_count", frame_count);
+    cout << "frame count: " << frame_count << " rendering frame: " << endl;
+    for(int i = 0; i < frame_count && ros::ok(); ++i)
+    {
+        VectorXd control(VectorXd::Zero(process_model->control_size()));
+        for(size_t i = 0; i < state.bodies_size(); i++)
+        {
+            control(i*6) = 1./(state.position(i)(0) - state.position(i)(2)*horizontal_ratio)
+                         - 1./(state.position(i)(0) + state.position(i)(2)*horizontal_ratio);
+            control(i*6 + 1) = 1./(state.position(i)(1) - state.position(i)(2)*vertical_ratio)
+                             - 1./(state.position(i)(1) + state.position(i)(2)*vertical_ratio);
+            control *= 0.1;
+
+            cout << "control; " << control.transpose() << endl;
+        }
+
+        process_model->conditional(1./30., state, control);
+        state = process_model->sample();
 
         sensor_msgs::ImagePtr image;
         sensor_msgs::CameraInfoPtr camera_info;
-        Simulator.simulateMeasurement(object_poses, image, camera_info);
 
-        FloatingBodySystem<-1> state(object_poses.size());
-        for(size_t j = 0; j < object_poses.size(); j++)
-            state.pose(object_poses[j], j);
+        std::vector<Eigen::Affine3d> object_poses;
+        for(size_t i = 0; i < state.bodies_size(); i++)
+            object_poses.push_back(Affine3d(state.homogeneous_matrix(i)));
+        Simulator.simulateMeasurement(object_poses, image, camera_info);
 
         dataset.addFrame(image, camera_info, state.poses());
 
-        ROS_INFO("%d, ", i);
+        cout << i << ", " << flush;
     }
+    cout << endl;
     ROS_INFO("\n");
     dataset.stOre();
 
