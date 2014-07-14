@@ -189,18 +189,18 @@ int main(int argc, char **argv)
     }
     boost::shared_ptr<StationaryProcess<> > process_model(new ComposedStationaryProcessModel(partial_process_models));
 
-    double horizontal_ratio = tan(0.995/2.); //rad
-    double vertical_ratio = tan(0.75/2.);
+    double max_ratio = tan(0.75/2.); // ratio x/z such that the object is guaranteed to be inside of image
     double desired_depth; node_handle.getParam("desired_depth", desired_depth);
 
-    cout << "ratios: " << endl;
-    cout << horizontal_ratio << endl;
-    cout << vertical_ratio << endl;
-
-
-    FloatingBodySystem<-1> state(object_mesh_paths.size());
-    for(size_t i = 0; i < state.bodies_size(); i++)
-        state.position(i) = Vector3d((double(rand())/RAND_MAX - 0.5), (double(rand())/RAND_MAX - 0.5), desired_depth);
+    FloatingBodySystem<-1> initial_state(object_mesh_paths.size());
+    for(size_t i = 0; i < initial_state.bodies_size(); i++)
+    {
+        size_t size = std::ceil(std::sqrt(double(initial_state.bodies_size())));
+        double delta = 2*max_ratio / double(size);
+        initial_state.position(i) = Vector3d(-max_ratio + (i%size + 0.5)*delta,
+                                             -max_ratio + (i/size + 0.5)*delta,
+                                             1.0) * desired_depth;
+    }
 
     cout << "depth " << desired_depth << endl;
 
@@ -208,19 +208,17 @@ int main(int argc, char **argv)
     TrackingDataset dataset(path_dataset.string());
 
     int frame_count; node_handle.getParam("frame_count", frame_count);
+    double d_gain; node_handle.getParam("d_gain", d_gain);
+
     cout << "frame count: " << frame_count << " rendering frame: " << endl;
+
+    FloatingBodySystem<-1> state = initial_state;
     for(int i = 0; i < frame_count && ros::ok(); ++i)
     {
         VectorXd control(VectorXd::Zero(process_model->control_size()));
         for(size_t i = 0; i < state.bodies_size(); i++)
         {
-            control(i*6) = 1./(state.position(i)(0) - state.position(i)(2)*horizontal_ratio)
-                         - 1./(state.position(i)(0) + state.position(i)(2)*horizontal_ratio);
-            control(i*6 + 1) = 1./(state.position(i)(1) - state.position(i)(2)*vertical_ratio)
-                             - 1./(state.position(i)(1) + state.position(i)(2)*vertical_ratio);
-            control *= 0.1;
-
-            cout << "control; " << control.transpose() << endl;
+            control.middleRows<3>(i*6) = - d_gain * (state.position(i) - initial_state.position(i));
         }
 
         process_model->conditional(1./30., state, control);
