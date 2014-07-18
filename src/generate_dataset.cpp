@@ -200,6 +200,7 @@ int main(int argc, char **argv)
         initial_state.position(i) = Vector3d(-max_ratio + (i%size + 0.5)*delta,
                                              -max_ratio + (i/size + 0.5)*delta,
                                              1.0) * desired_depth;
+        initial_state.euler_vector(i) = Vector3d(0.7, 0.7, 0.7);
     }
 
     cout << "depth " << desired_depth << endl;
@@ -237,8 +238,8 @@ int main(int argc, char **argv)
         cout << i << ", " << flush;
     }
     cout << endl;
-    ROS_INFO("\n");
-    dataset.stOre();
+    if(dataset.sIze() == frame_count)
+        dataset.stOre();
 
     return 0;
 }

@@ -183,11 +183,11 @@ namespace render_kinect {
       {
 	//Gaussian Noise
 	float mean = 0.0;
-	float std  = 0.15;
+    float std  = 0.03;
 	noise_gen_ = new GaussianNoise( camera_.getWidth(), camera_.getHeight(), mean, std);
       } else if (noise_type_==PERLIN) 
       {
-	float scale = 0.4;
+    float scale = 0.4;
 	noise_gen_ = new PerlinNoise( camera_.getWidth(), camera_.getHeight(), scale);
       } else if (noise_type_==SIMPLEX) 
       {
@@ -265,7 +265,7 @@ namespace render_kinect {
 
     // allocate memory for depth map and labels
     depth_map = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_64FC1);
-    depth_map.setTo(0.0);
+    depth_map.setTo(3.0);
     labels = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_8UC3);
     labels.setTo(cv::Scalar(background_, background_, background_));
     cv::Mat disp(camera_.getHeight(), camera_.getWidth(), CV_32FC1);
