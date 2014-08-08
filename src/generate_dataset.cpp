@@ -243,6 +243,7 @@ int main(int argc, char **argv)
         std::vector<Eigen::Affine3d> object_poses;
         for(size_t j = 0; j < state.bodies_size(); j++)
             object_poses.push_back(Affine3d(state.homogeneous_matrix(j)));
+            
         Simulator.simulateMeasurement(object_poses, image, camera_info);
 
         dataset.addFrame(image, camera_info, state.poses());
