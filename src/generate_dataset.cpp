@@ -33,7 +33,7 @@
  *********************************************************************/
 
 /* move_kinect.cpp 
- * Program publishes simulated measurements from an object moving with
+ * Program publishes simulated observations from an object moving with
  * brownian motion.
  */
 
@@ -47,14 +47,14 @@
 #include <render_kinect/wiener_process.h>
 #include <render_kinect/camera.h>
 
-#include <state_filtering/tools/tracking_dataset.hpp>
-#include <state_filtering/system_states/floating_body_system.hpp>
-#include <state_filtering/tools/helper_functions.hpp>
+#include <state_filtering/utils/tracking_dataset.hpp>
+#include <state_filtering/states/floating_body_system.hpp>
+#include <state_filtering/utils/helper_functions.hpp>
 
 
-#include <state_filtering/process_model/stationary_process_model.hpp>
-#include <state_filtering/process_model/composed_stationary_process_model.hpp>
-#include <state_filtering/process_model/brownian_process_model.hpp>
+#include <state_filtering/models/processes/features/stationary_process.hpp>
+//#include <state_filtering/models/processes/implementations/composed_stationary_process_model.hpp>
+#include <state_filtering/models/processes/implementations/brownian_object_motion.hpp>
 
 // Mostly reading tools
 #include <render_kinect/tools/rosread_utils.h>
@@ -64,7 +64,7 @@
 
 using namespace std;
 using namespace Eigen;
-using namespace filter;
+using namespace distributions;
 
 // Generate a process models for each object instance in the scene
 void getProcessModels(int n_objects, 
@@ -177,17 +177,29 @@ int main(int argc, char **argv)
     MatrixXd linear_acceleration_covariance = MatrixXd::Identity(3, 3) * pow(double(linear_acceleration_sigma), 2);
     MatrixXd angular_acceleration_covariance = MatrixXd::Identity(3, 3) * pow(double(angular_acceleration_sigma), 2);
 
-    vector<boost::shared_ptr<StationaryProcess<> > > partial_process_models(object_mesh_paths.size());
-    for(size_t i = 0; i < partial_process_models.size(); i++)
+//    vector<boost::shared_ptr<StationaryProcess<> > > partial_process_models(object_mesh_paths.size());
+//    for(size_t i = 0; i < partial_process_models.size(); i++)
+//    {
+//        boost::shared_ptr<BrownianObjectMotion<> > partial_process_model(new BrownianObjectMotion<>);
+//        partial_process_model->parameters(hf::Std2Eigen(rotation_center),
+//                                          damping,
+//                                          linear_acceleration_covariance,
+//                                          angular_acceleration_covariance);
+//        partial_process_models[i] = partial_process_model;
+//    }
+//    boost::shared_ptr<StationaryProcess<> > process_model(new ComposedStationaryProcessModel(partial_process_models));
+    boost::shared_ptr<BrownianObjectMotion<> > process_model(new BrownianObjectMotion<>(object_mesh_paths.size()));
+    for(size_t i = 0; i < object_mesh_paths.size(); i++)
     {
-        boost::shared_ptr<BrownianProcessModel<> > partial_process_model(new BrownianProcessModel<>);
-        partial_process_model->parameters(hf::Std2Eigen(rotation_center),
-                                          damping,
-                                          linear_acceleration_covariance,
-                                          angular_acceleration_covariance);
-        partial_process_models[i] = partial_process_model;
+        process_model->Parameters(i,
+                               hf::Std2Eigen(rotation_center),
+                               damping,
+                               linear_acceleration_covariance,
+                               angular_acceleration_covariance);
     }
-    boost::shared_ptr<StationaryProcess<> > process_model(new ComposedStationaryProcessModel(partial_process_models));
+
+
+
 
     double max_ratio = tan(0.75/2.); // ratio x/z such that the object is guaranteed to be inside of image
     double desired_depth; node_handle.getParam("desired_depth", desired_depth);
@@ -216,21 +228,21 @@ int main(int argc, char **argv)
     FloatingBodySystem<-1> state = initial_state;
     for(int i = 0; i < frame_count && ros::ok(); ++i)
     {
-        VectorXd control(VectorXd::Zero(process_model->control_size()));
-        for(size_t i = 0; i < state.bodies_size(); i++)
+        VectorXd control(VectorXd::Zero(process_model->NoiseDimension()));
+        for(size_t j = 0; j < state.bodies_size(); j++)
         {
-            control.middleRows<3>(i*6) = - d_gain * (state.position(i) - initial_state.position(i));
+            control.middleRows<3>(j*6) = - d_gain * (state.position(j) - initial_state.position(j));
         }
 
-        process_model->conditional(1./30., state, control);
-        state = process_model->sample();
+        process_model->Condition(1./30., state, control);
+        state = process_model->Sample();
 
         sensor_msgs::ImagePtr image;
         sensor_msgs::CameraInfoPtr camera_info;
 
         std::vector<Eigen::Affine3d> object_poses;
-        for(size_t i = 0; i < state.bodies_size(); i++)
-            object_poses.push_back(Affine3d(state.homogeneous_matrix(i)));
+        for(size_t j = 0; j < state.bodies_size(); j++)
+            object_poses.push_back(Affine3d(state.homogeneous_matrix(j)));
         Simulator.simulateMeasurement(object_poses, image, camera_info);
 
         dataset.addFrame(image, camera_info, state.poses());
