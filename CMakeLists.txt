@@ -128,3 +128,6 @@ target_link_libraries(render_object ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 add_executable(move_object src/move_object.cpp)
 target_link_libraries(move_object ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
+
+add_executable(move_robot src/move_robot.cpp)
+target_link_libraries(move_robot ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
