@@ -18,6 +18,7 @@ find_package(catkin REQUIRED
     cv_bridge
     tf
     tf_conversions
+    eigen_conversions
     urdf 
     orocos_kdl 
     kdl_parser
@@ -113,6 +114,7 @@ catkin_package(
     cv_bridge
     tf
     tf_conversions
+    eigen_conversions
     urdf
     orocos_kdl
     kdl_parser

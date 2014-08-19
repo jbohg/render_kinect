@@ -120,7 +120,8 @@ namespace render_kinect
       ///////////////////////////////////////////////////////////////////////////////
  
       robot_state_->GetTransforms(joint_state_, current_tfs_, false);
-      simulator_->simulatePublishMeasurement(current_tfs_);
+      //simulator_->simulatePublishMeasurement(current_tfs_);
+      simulator_->simulateStoreMeasurement(current_tfs_, 1, 1, 1);
     }
 
     ros::NodeHandle nh_priv_;
