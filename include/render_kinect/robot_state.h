@@ -71,7 +71,7 @@ public:
 private:
 
   // Initialises the KDL data and specifically the camera pose
-  void InitKDLData(const Eigen::VectorXd& joint_state);
+  void InitKDLData(const sensor_msgs::JointState &joint_state);
   
   // compute the camera frame for the current joint angles
   void SetCameraTransform();
@@ -79,6 +79,16 @@ private:
   // compute the transformations for all the links in one go
   void ComputeLinkTransforms();
   
+  // convert JointState message to Eigen Vector
+  void GetInitialJoints(const sensor_msgs::JointState &state, 
+			Eigen::VectorXd &jnt_angles);
+
+  // Get the index of the joint name in the map
+  int GetJointIndex(const std::string &name);
+  
+  // Get the number of joints from the kinematic tree
+  int num_joints();
+
   ros::NodeHandle nh_;
   ros::NodeHandle nh_priv_;
   std::string description_path_;

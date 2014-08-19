@@ -18,6 +18,9 @@ find_package(catkin REQUIRED
     cv_bridge
     tf
     tf_conversions
+    urdf 
+    orocos_kdl 
+    kdl_parser
   )
 
 # There exist different versions of the assimp library for different 
@@ -110,6 +113,9 @@ catkin_package(
     cv_bridge
     tf
     tf_conversions
+    urdf
+    orocos_kdl
+    kdl_parser
   DEPENDS OpenCV eigen 
 )
 
@@ -129,5 +135,5 @@ target_link_libraries(render_object ${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(move_object src/move_object.cpp)
 target_link_libraries(move_object ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
 
-add_executable(move_robot src/move_robot.cpp)
+add_executable(move_robot src/move_robot.cpp src/robot_state.cpp)
 target_link_libraries(move_robot ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
