@@ -62,11 +62,12 @@ public:
   RobotState();
   ~RobotState();
   
-  // outputs a list of mesh model objects
-  void GetPartMeshPaths(std::vector<std::string> &part_mesh_paths);
-
+  // outputs a list of mesh model objects and their original transform
+  void GetPartMeshData(std::vector<std::string> &part_mesh_paths,
+		       std::vector<Eigen::Affine3d> &part_mesh_transform);
+  
   void GetTransforms(const sensor_msgs::JointState &joint_state, 
-		     std::vector<Eigen::Affine3d> current_tfs,
+		     std::vector<Eigen::Affine3d> &current_tfs,
 		     bool noisy = false);
 private:
 

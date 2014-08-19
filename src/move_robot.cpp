@@ -83,7 +83,8 @@ namespace render_kinect
       
       // Get the paths to the part_mesh_models
       std::vector<std::string> part_mesh_paths;
-      robot_state_->GetPartMeshPaths(part_mesh_paths);
+      std::vector<Eigen::Affine3d> part_mesh_transforms;
+      robot_state_->GetPartMeshData(part_mesh_paths, part_mesh_transforms);
 
       // Initialize the kinect simulator
       simulator_ = new Simulate(cam_info, 
@@ -93,6 +94,10 @@ namespace render_kinect
 				room_path,
 				room_tf);
 
+      // set the original/default transform of the robot parts (otherwise they are set to Identity)
+      simulator_->setOriginalTransform(part_mesh_transforms);
+
+      // subscribe to joint states 
       joint_states_sub_ = nh_priv_.subscribe<sensor_msgs::JointState>(joint_states_topic, 
 								      1,
 								      &RobotObserver::jointStateCallback, 

@@ -109,6 +109,11 @@ namespace render_kinect {
       delete object_models_;
     }
 
+    void setOriginalTransform(const std::vector<Eigen::Affine3d> &part_mesh_transforms)
+    {
+      object_models_->setOriginalTransform(part_mesh_transforms);
+    }
+    
     void simulateStoreMeasurement(const std::vector<Eigen::Affine3d> &new_tfs, 
 				  bool store_depth, 
 				  bool store_label, 

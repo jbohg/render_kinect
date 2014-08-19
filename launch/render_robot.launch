@@ -1,0 +1,24 @@
+<launch>
+  <param name="use_sim_time" type="bool" value="true" />
+  <arg name="camera" default="XTION" />
+  <arg name="depth_frame" default="/$(arg camera)_IR" />
+  <arg name="calibration_url"  default="$(find state_filtering)/config/xtion_calib.yaml" />
+  <arg name="noise"  default="NONE" />
+  <arg name="background"  default="false" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find arm_robot_model)/models/DarpaRobot.urdf.xacro'" />
+  <!-- Pose Estimation Node-->
+  <node name="move_robot" type="move_robot" pkg="render_kinect" output="screen" respawn="false"><!-- launch-prefix="gdb -ex run args">< launch-prefix="valgrind"-->
+    <param name="depth_frame_id"  type="string"  value="$(arg depth_frame)" />
+    <param name="calib_url"  type="string"  value="$(arg calibration_url)" />
+    <param name="noise"  type="string"  value="$(arg noise)" />
+    <param name="background"  type="bool"  value="$(arg background)" />
+    <rosparam command="load" file="$(find render_kinect)/config/sim_config.yaml" />
+    <param name="robot_description_package_path" type="string" value="$(find arm_robot_model)" />
+    <rosparam command="load" file="$(find render_kinect)/config/sim_config.yaml" />
+  </node>
+
+  <!-- This frame has to be published as the camera info in the bag files are relative to XTION_RGB (which should be XTION_IR) -->
+  <!-- If this frame is not published, then the CameraDisplay in Rviz won't work-->
+  <!--node pkg="tf" type="static_transform_publisher" name="$(arg camera)_IR_base_link1" args="0 0 0 0 0 0  $(arg camera) /$(arg camera)_RGB 100" /-->
+
+</launch>

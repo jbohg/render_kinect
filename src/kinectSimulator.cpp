@@ -65,6 +65,8 @@
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/AABB_polyhedron_triangle_primitive.h>
 
+#include <assert.h>
+
 #ifdef HAVE_OPENMP
 #include <omp.h>
 #endif
@@ -203,6 +205,15 @@ namespace render_kinect {
       delete noise_gen_;
   }
 
+  void KinectSimulator::setOriginalTransform(const std::vector<Eigen::Affine3d> &part_mesh_transforms)
+  {
+    std::vector<boost::shared_ptr<ObjectMeshModel> >::const_iterator it;
+    for(it=models_.begin();it!=models_.end();++it)
+      {
+	(*it)->setOriginalTransform(part_mesh_transforms[it-models_.begin()]);
+      }
+  }
+
   sensor_msgs::CameraInfoPtr KinectSimulator::getCameraInfo (ros::Time time)
   {
     return camera_.getCameraInfo(time);
@@ -211,12 +222,17 @@ namespace render_kinect {
   // Function that exchanges current object transform
   void KinectSimulator::updateObjectPoses(const std::vector<Eigen::Affine3d> &p_transforms)   
   {
+    std::cout << "Size of Models: " << models_.size() << std::endl;
+    std::cout << "Size of transforms " << p_transforms.size() << std::endl;
+
     assert(p_transforms.size()==models_.size());
     
     std::vector<boost::shared_ptr<ObjectMeshModel> >::const_iterator it;
-    for(it=models_.begin();it!=models_.end();++it)
+    for(it=models_.begin();it!=models_.end();++it){
       (*it)->updateTransformation(p_transforms[it-models_.begin()]);
-    
+      //std::cout << "Transform for " << it-models_.begin() <<  " " << p_transforms[it-models_.begin()].data() << std::endl;
+    }
+
     if(render_bg_)
       room_->updateTransformation(room_tf_);
   }

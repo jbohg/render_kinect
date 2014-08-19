@@ -105,7 +105,8 @@ RobotState::~RobotState()
   delete chain_solver_;
 }
 
-void RobotState::GetPartMeshPaths(std::vector<std::string> &part_mesh_paths)
+void RobotState::GetPartMeshData(std::vector<std::string> &part_mesh_paths,
+				 std::vector<Eigen::Affine3d> &part_mesh_transform)
 {
   //Load robot mesh for each link
   std::vector<boost::shared_ptr<urdf::Link> > links;
@@ -121,21 +122,37 @@ void RobotState::GetPartMeshPaths(std::vector<std::string> &part_mesh_paths)
 	  tmp_link = tmp_link->getParent();
 	}
       
-      if ((tmp_link->visual.get() != NULL) &&
-	  (tmp_link->visual->geometry.get() != NULL) && 
-	  (tmp_link->visual->geometry->type == urdf::Geometry::MESH))// &&
+      if ((links[i]->visual.get() != NULL) &&
+	  (links[i]->visual->geometry.get() != NULL) && 
+	  (links[i]->visual->geometry->type == urdf::Geometry::MESH))// &&
 	{ 
 	  
-	  boost::shared_ptr<urdf::Mesh> mesh = boost::dynamic_pointer_cast<urdf::Mesh> (tmp_link->visual->geometry);
+	  boost::shared_ptr<urdf::Mesh> mesh = boost::dynamic_pointer_cast<urdf::Mesh> (links[i]->visual->geometry);
 	  std::string filename (mesh->filename);
-	  
+
 	  if (filename.substr(filename.size() - 4 , 4) == ".stl" || filename.substr(filename.size() - 4 , 4) == ".dae")
 	    {
+	      if (filename.substr(filename.size() - 4 , 4) == ".dae")
+		filename.replace(filename.size() - 4 , 4, ".stl");
+	      filename.erase(0,25);
+	      filename = description_path_ + filename;
+	      
 	      // if the link has an actual mesh file to read
 	      std::cout << "link " << links[i]->name << " is descendant of " << tmp_link->name << std::endl;
+	      // store the original transform of the part
+	      Eigen::Affine3d tmp;
+	      tmp.linear() = Eigen::Quaterniond(links[i]->visual->origin.rotation.w,
+						links[i]->visual->origin.rotation.x, 
+						links[i]->visual->origin.rotation.y, 
+						links[i]->visual->origin.rotation.z).toRotationMatrix(); 
+	      tmp.translation() = Eigen::Vector3d(links[i]->visual->origin.position.x, 
+						  links[i]->visual->origin.position.y, 
+						  links[i]->visual->origin.position.z);
+	      part_mesh_transform.push_back(tmp);
+	      // stores the filenames
 	      part_mesh_paths.push_back(filename);
 	      // Produces an index map for the links
-	      part_mesh_map_.push_back(tmp_link->name);
+	      part_mesh_map_.push_back(links[i]->name);
 	    }
 	} 
     }
@@ -143,7 +160,7 @@ void RobotState::GetPartMeshPaths(std::vector<std::string> &part_mesh_paths)
 
 
 void RobotState::GetTransforms(const sensor_msgs::JointState &joint_state, 
-			       std::vector<Eigen::Affine3d> current_tfs,
+			       std::vector<Eigen::Affine3d> &current_tfs,
 			       bool noisy)
 {
   // compute the link transforms given the joint angles
@@ -155,6 +172,8 @@ void RobotState::GetTransforms(const sensor_msgs::JointState &joint_state,
   for (KDL::SegmentMap::const_iterator seg_it = segment_map_.begin(); 
        seg_it != segment_map_.end(); ++seg_it)
     {
+      //std::cout << "seg_it->second.segment.getName()"
+
       if (std::find(part_mesh_map_.begin(), 
 		    part_mesh_map_.end(), 
 		    seg_it->second.segment.getName()) != part_mesh_map_.end())
@@ -224,22 +243,6 @@ void RobotState::ComputeLinkTransforms( )
 	}
     }
 }
-
-/*
-Eigen::VectorXd RobotState::GetLinkPosition( int idx)
-{
-  Eigen::VectorXd pos(3);
-  pos << frame_map_[part_mesh_map_[idx]].p.x(), frame_map_[part_mesh_map_[idx]].p.y(),frame_map_[part_mesh_map_[idx]].p.z(); 
-  return pos;
-}
-
-Eigen::Quaternion<double> RobotState::GetLinkOrientation( int idx)
-{
-  Eigen::Quaternion<double> quat;
-  frame_map_[part_mesh_map_[idx]].M.GetQuaternion(quat.x(), quat.y(), quat.z(), quat.w());
-  return quat;
-}
-*/
 
 void RobotState::GetInitialJoints(const sensor_msgs::JointState &state, 
 				  Eigen::VectorXd &jnt_angles)
