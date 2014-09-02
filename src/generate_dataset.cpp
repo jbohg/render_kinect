@@ -52,9 +52,9 @@
 #include <state_filtering/utils/helper_functions.hpp>
 
 
-#include <state_filtering/models/processes/features/stationary_process.hpp>
+#include <state_filtering/models/processes/interfaces/stationary_process_interface.hpp>
 //#include <state_filtering/models/processes/implementations/composed_stationary_process_model.hpp>
-#include <state_filtering/models/processes/implementations/brownian_object_motion.hpp>
+#include <state_filtering/models/processes/brownian_object_motion.hpp>
 
 // Mostly reading tools
 #include <render_kinect/tools/rosread_utils.h>
@@ -64,7 +64,7 @@
 
 using namespace std;
 using namespace Eigen;
-using namespace distributions;
+using namespace sf;
 
 // Generate a process models for each object instance in the scene
 void getProcessModels(int n_objects, 
@@ -188,7 +188,8 @@ int main(int argc, char **argv)
 //        partial_process_models[i] = partial_process_model;
 //    }
 //    boost::shared_ptr<StationaryProcess<> > process_model(new ComposedStationaryProcessModel(partial_process_models));
-    boost::shared_ptr<BrownianObjectMotion<> > process_model(new BrownianObjectMotion<>(object_mesh_paths.size()));
+    boost::shared_ptr<BrownianObjectMotion<FloatingBodySystem<-1>, -1> >
+            process_model(new BrownianObjectMotion<FloatingBodySystem<-1>, -1>(object_mesh_paths.size()));
     for(size_t i = 0; i < object_mesh_paths.size(); i++)
     {
         process_model->Parameters(i,
