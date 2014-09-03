@@ -14,8 +14,8 @@ room_quat:  [0.401297, 0.915905,-0.00883711,-0.00061783]
 #noise: NONE
 
 #noise: GAUSSIAN
-#mean:  0.0
-#std:   0.15
+mean:  0.0
+std:   0.15
 
 noise: PERLIN
 scale: 0.4

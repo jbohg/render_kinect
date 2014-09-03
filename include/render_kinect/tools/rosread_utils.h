@@ -148,8 +148,7 @@ namespace rosread_utils {
       nh.param("mean", mean, 0.0);
       nh.param("std", std, 0.15);
       nh.param("scale", scale, 0.4);
-      ROS_INFO ("Using noise model '%s' with parameters mean=%f, std=%f and scale=%f", 
-		noise.c_str(), mean, std, scale);
+      ROS_INFO ("Using noise model '%s'", noise.c_str());
     }
 
     // image size
