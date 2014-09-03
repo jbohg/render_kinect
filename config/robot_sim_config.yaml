@@ -4,5 +4,7 @@
 rendering_root_left: L_SHOULDER
 rendering_root_right: R_SHOULDER
 
-room_trans: [-1.5, 0.0, 1.0]
-room_quat:  [0.0, 0.530669, 0.379049, 0.758098]
+# default position -> can be updated in the code 
+# for example by using the base frame
+room_trans: [0.0702693,1.48506,0.970068]
+room_quat:  [0.401297, 0.915905,-0.00883711,-0.00061783]

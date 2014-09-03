@@ -110,6 +110,8 @@ namespace render_kinect
 
     void setOriginalTransform(const std::vector<Eigen::Affine3d> &part_mesh_transforms);
 
+    void setRoomTransform(Eigen::Affine3d &room_tf);
+
     unsigned getNumMeshes ()const{return models_.size();};
 	
     uchar getBG ()const{return background_;}

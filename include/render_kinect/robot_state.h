@@ -69,6 +69,10 @@ public:
   void GetTransforms(const sensor_msgs::JointState &joint_state, 
 		     std::vector<Eigen::Affine3d> &current_tfs,
 		     bool noisy = false);
+  
+  // get the transform of the 'background' room based on the cam2base transform
+  bool GetRoomTransform(Eigen::Affine3d &room_tf);
+
 private:
 
   // Initialises the KDL data and specifically the camera pose
@@ -79,7 +83,7 @@ private:
   
   // compute the transformations for all the links in one go
   void ComputeLinkTransforms();
-  
+
   // convert JointState message to Eigen Vector
   void GetInitialJoints(const sensor_msgs::JointState &state, 
 			Eigen::VectorXd &jnt_angles);
@@ -121,6 +125,9 @@ private:
   KDL::JntArray jnt_array_;
   // Contains Camera pose relative to base
   KDL::Frame    cam_frame_;
+
+  // flag that determines whether KDL data has been initialized
+  bool initialized_;
 
   // rendering roots for left and right arm to exclude occluding head meshes
   std::string rendering_root_left_, rendering_root_right_;

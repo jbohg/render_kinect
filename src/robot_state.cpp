@@ -38,6 +38,7 @@
 
 RobotState::RobotState()
   : nh_priv_("~")
+  , initialized_(false)
 {
   // Load robot description from parameter server
   std::string desc_string;
@@ -201,6 +202,10 @@ void RobotState::InitKDLData(const sensor_msgs::JointState &joint_state)
   SetCameraTransform();
   // Given the new joint angles, compute all link transforms in one go
   ComputeLinkTransforms();
+
+  // indicate that KDL data has been initialized once
+  if(!initialized_)
+    initialized_ = true;
 }
 
 void RobotState::SetCameraTransform()
@@ -228,6 +233,14 @@ void RobotState::SetCameraTransform()
   // get transform from base to camera frame
   if(chain_solver_->JntToCart(chain_jnt_array, cam_frame_)<0)
     ROS_ERROR("Could get transform from base to camera\n");
+}
+
+bool RobotState::GetRoomTransform(Eigen::Affine3d &room_tf)
+{
+  if(initialized_) {
+    tf::transformKDLToEigen(cam_frame_, room_tf);
+    return true;
+  } else return false;
 }
 
 void RobotState::ComputeLinkTransforms( )

@@ -4,7 +4,7 @@
   <arg name="depth_frame" default="/$(arg camera)_IR" />
   <arg name="calibration_url"  default="$(find state_filtering)/config/xtion_calib.yaml" />
   <arg name="noise"  default="NONE" />
-  <arg name="background"  default="false" />
+  <arg name="background"  default="true" />
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find arm_robot_model)/models/DarpaRobot.urdf.xacro'" />
   <!-- Pose Estimation Node-->
   <node name="move_robot" type="move_robot" pkg="render_kinect" output="screen" respawn="false"><!-- launch-prefix="gdb -ex run args">< launch-prefix="valgrind"-->

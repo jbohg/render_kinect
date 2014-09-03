@@ -109,6 +109,11 @@ namespace render_kinect {
       delete object_models_;
     }
 
+    void setRoomTransform(Eigen::Affine3d &room_tf)
+    {
+      object_models_->setRoomTransform(room_tf);
+    }
+
     void setOriginalTransform(const std::vector<Eigen::Affine3d> &part_mesh_transforms)
     {
       object_models_->setOriginalTransform(part_mesh_transforms);

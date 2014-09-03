@@ -65,6 +65,9 @@
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/AABB_polyhedron_triangle_primitive.h>
 
+// for activating the asserts
+// #undef NDEBUG
+
 #include <assert.h>
 
 #ifdef HAVE_OPENMP
@@ -215,6 +218,8 @@ namespace render_kinect {
       }
   }
 
+  void KinectSimulator::setRoomTransform(Eigen::Affine3d &room_tf){room_tf_ = room_tf;}
+
   sensor_msgs::CameraInfoPtr KinectSimulator::getCameraInfo (ros::Time time)
   {
     return camera_.getCameraInfo(time);
@@ -226,7 +231,7 @@ namespace render_kinect {
     //std::cout << "Size of Models: " << models_.size() << std::endl;
     //std::cout << "Size of transforms " << p_transforms.size() << std::endl;
 
-    assert(p_transforms.size()==models_.size()+1);
+    assert(p_transforms.size()==models_.size());
     
     std::vector<boost::shared_ptr<ObjectMeshModel> >::const_iterator it;
     for(it=models_.begin();it!=models_.end();++it)
