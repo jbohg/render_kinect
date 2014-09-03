@@ -127,6 +127,10 @@ namespace render_kinect
       ///////////////////////////////////////////////////////////////////////////////
       robot_state_->GetTransforms(joint_state_, current_tfs_, false);
       
+      // The below is currently redundant as the room transformation in the config file
+      // is tuned to be aligned with the real robot's base
+      // can be commented back in if necessary (for example if camera is moving)
+      /*
       if(!bg_init_) {
 	// compute room orientation using the robot base
 	Eigen::Affine3d room_tf;
@@ -137,6 +141,7 @@ namespace render_kinect
 	// make sure this happens only once
 	bg_init_ = true;
       }
+      */
 
       simulator_->simulatePublishMeasurement(current_tfs_);
       //simulator_->simulateStoreMeasurement(current_tfs_, 1, 1, 1);

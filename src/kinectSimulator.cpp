@@ -67,7 +67,6 @@
 
 // for activating the asserts
 // #undef NDEBUG
-
 #include <assert.h>
 
 #ifdef HAVE_OPENMP
@@ -108,7 +107,7 @@ namespace render_kinect {
 				   const Eigen::Affine3d &room_tf) 
     : render_bg_(background)
     , camera_( p_camera_info)
-    , noise_type_(p_camera_info.noise_)
+    , noise_type_(p_camera_info.noise_.type_)
     , noise_gen_(NULL)
     , noisy_labels_(0)
     , room_tf_(room_tf)
@@ -187,17 +186,17 @@ namespace render_kinect {
     if(noise_type_==GAUSSIAN)
       {
 	//Gaussian Noise
-	float mean = 0.0;
-	float std  = 0.15;
-	noise_gen_ = new GaussianNoise( camera_.getWidth(), camera_.getHeight(), mean, std);
+	//float mean = 0.0;
+	//float std  = 0.15;
+	noise_gen_ = new GaussianNoise( camera_.getWidth(), camera_.getHeight(), p_camera_info.noise_.mean_, p_camera_info.noise_.std_);
       } else if (noise_type_==PERLIN) 
       {
-	float scale = 0.4;
-	noise_gen_ = new PerlinNoise( camera_.getWidth(), camera_.getHeight(), scale);
+	//float scale = 0.4;
+	noise_gen_ = new PerlinNoise( camera_.getWidth(), camera_.getHeight(), p_camera_info.noise_.scale_);
       } else if (noise_type_==SIMPLEX) 
       {
-	float scale = 0.5;
-	noise_gen_ = new SimplexNoise( camera_.getWidth(), camera_.getHeight(), scale);
+	//float scale = 0.5;
+	noise_gen_ = new SimplexNoise( camera_.getWidth(), camera_.getHeight(), p_camera_info.noise_.scale_);
       }
 
   }

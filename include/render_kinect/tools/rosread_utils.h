@@ -137,14 +137,19 @@ namespace rosread_utils {
       calibration_valid = true;
     ROS_INFO ("Loading Calibration from '%s'", calib_url.c_str());
 
-    // get the noise model
+    // get the noise model and its parameters
     std::string noise;
+    double mean, std, scale;
     nh.param ("noise", noise, std::string (""));
     if (noise.empty ()) { 
       noise = "NONE";
       ROS_INFO ("Noise model not set. Using 'NONE'.");
     } else {
-      ROS_INFO ("Using noise model '%s'", noise.c_str());
+      nh.param("mean", mean, 0.0);
+      nh.param("std", std, 0.15);
+      nh.param("scale", scale, 0.4);
+      ROS_INFO ("Using noise model '%s' with parameters mean=%f, std=%f and scale=%f", 
+		noise.c_str(), mean, std, scale);
     }
 
     // image size
@@ -163,11 +168,18 @@ namespace rosread_utils {
 
     // Type of noise
     if (noise.compare("NONE")==0) {
-      cam_info.noise_ = render_kinect::NONE;
+      cam_info.noise_.type_ = render_kinect::NONE;
     } else if(noise.compare("GAUSSIAN")==0) {
-      cam_info.noise_ = render_kinect::GAUSSIAN;
+      cam_info.noise_.type_ = render_kinect::GAUSSIAN;
+      cam_info.noise_.mean_ = mean;
+      cam_info.noise_.std_ = std;
+      if(mean==0.0 && std==0.0)
+	ROS_WARN("Using zero mean and zero std for Gaussian noise. This seems wrong in the config file.");
     } else if (noise.compare("PERLIN")==0) {
-      cam_info.noise_ = render_kinect::PERLIN;
+      cam_info.noise_.type_ = render_kinect::PERLIN;
+      cam_info.noise_.scale_ = scale;
+      if(scale==0.0)
+	ROS_WARN("Using zero scale for PERLIN noise. This seems wrong in the config file.");
     } else {
       ROS_ERROR("Given noise type invalid: %s\n", noise.c_str());
       exit(-1);
