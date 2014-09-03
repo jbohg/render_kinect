@@ -122,6 +122,9 @@ private:
   // Contains Camera pose relative to base
   KDL::Frame    cam_frame_;
 
+  // rendering roots for left and right arm to exclude occluding head meshes
+  std::string rendering_root_left_, rendering_root_right_;
+
 };
 
 #endif //ROBOT_STATE_H_

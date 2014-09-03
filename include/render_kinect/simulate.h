@@ -159,10 +159,6 @@ namespace render_kinect {
       cv::Mat p_result;
       object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_im_, labels_);
 
-
-
-
-      
       double min_val, max_val;
       minMaxLoc(rgb_vals_, &min_val, &max_val);
 

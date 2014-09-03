@@ -196,6 +196,7 @@ namespace render_kinect {
 	float scale = 0.5;
 	noise_gen_ = new SimplexNoise( camera_.getWidth(), camera_.getHeight(), scale);
       }
+
   }
 
   // Destructor
@@ -222,16 +223,14 @@ namespace render_kinect {
   // Function that exchanges current object transform
   void KinectSimulator::updateObjectPoses(const std::vector<Eigen::Affine3d> &p_transforms)   
   {
-    std::cout << "Size of Models: " << models_.size() << std::endl;
-    std::cout << "Size of transforms " << p_transforms.size() << std::endl;
+    //std::cout << "Size of Models: " << models_.size() << std::endl;
+    //std::cout << "Size of transforms " << p_transforms.size() << std::endl;
 
-    assert(p_transforms.size()==models_.size());
+    assert(p_transforms.size()==models_.size()+1);
     
     std::vector<boost::shared_ptr<ObjectMeshModel> >::const_iterator it;
-    for(it=models_.begin();it!=models_.end();++it){
+    for(it=models_.begin();it!=models_.end();++it)
       (*it)->updateTransformation(p_transforms[it-models_.begin()]);
-      //std::cout << "Transform for " << it-models_.begin() <<  " " << p_transforms[it-models_.begin()].data() << std::endl;
-    }
 
     if(render_bg_)
       room_->updateTransformation(room_tf_);
@@ -270,12 +269,10 @@ namespace render_kinect {
 				  cv::Mat &depth_map,
 				  cv::Mat &labels) 
   {
-    // Note that for this simple example case of one rigid object, 
-    // the tree would actually not needed 
-    // to be updated. Instead the camera could be moved and rays could be casted from these 
-    // new positions.
     // However, for articulated or multiple rigid objects that change their configuration over 
     // time, this update is necessary and is therefore kept in this code.
+    // If only  one object would be tracked, you could also change the camera pose. An update of the 
+    // AABB tree would not be needed.
     updateObjectPoses(p_transforms);
     updateTree();
 
@@ -325,7 +322,7 @@ namespace render_kinect {
 		  min_dist = dist;
 		  // intersection coordinates
 		  min_p = point;
-		  // label of the intersected object (will be zero for this simple case)
+		  // label of the intersected object
 		  min_id = triangle_id;
 		}
 	      } else {

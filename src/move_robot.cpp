@@ -116,14 +116,12 @@ namespace render_kinect
     {
       ros::Time jnt_stamp = msg->header.stamp;
       joint_state_ = *msg;
-     
       // TODO: //////////////////////////////////////////////////////////////////////
       // Generate noisy joint_state from which the observations will be generated. //
       // This will then be the true joint state that has to be estimated.          //
       // The joint state that comes in to this function as a message is considered //
       // as the noisy joint angles as read from erroneous encoders etc             //
       ///////////////////////////////////////////////////////////////////////////////
- 
       robot_state_->GetTransforms(joint_state_, current_tfs_, false);
       //simulator_->simulatePublishMeasurement(current_tfs_);
       simulator_->simulateStoreMeasurement(current_tfs_, 1, 1, 1);

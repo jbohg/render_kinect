@@ -56,6 +56,8 @@ RobotState::RobotState()
 
   // setup path for robot description and root of the tree
   nh_priv_.param<std::string>("robot_description_package_path", description_path_, "..");
+  nh_priv_.param<std::string>("rendering_root_left", rendering_root_left_, "L_SHOULDER");
+  nh_priv_.param<std::string>("rendering_root_right", rendering_root_right_, "R_SHOULDER");
 
   // create segment map for correct ordering of joints
   segment_map_ =  kin_tree_.getSegments();
@@ -65,7 +67,6 @@ RobotState::RobotState()
   upper_limit_.resize(kin_tree_.getNrOfJoints());
   for (KDL::SegmentMap::const_iterator seg_it = segment_map_.begin(); seg_it != segment_map_.end(); ++seg_it)
     {
-	
       if (seg_it->second.segment.getJoint().getType() != KDL::Joint::None)
 	{
 	  joint = urdf_.getJoint(seg_it->second.segment.getJoint().getName().c_str());
@@ -116,15 +117,19 @@ void RobotState::GetPartMeshData(std::vector<std::string> &part_mesh_paths,
     {
       // keep only the links descending from our root
       boost::shared_ptr<urdf::Link> tmp_link = links[i];
-      while(//tmp_link->name.compare(tf_correction_root_)!=0 && 
+      while(tmp_link->name.compare(rendering_root_left_)!=0 && 
+	    tmp_link->name.compare(rendering_root_right_)!=0 && 
 	    tmp_link->name.compare(global_root)!=0)
 	{
 	  tmp_link = tmp_link->getParent();
 	}
       
+      if(tmp_link->name.compare(global_root)==0)
+	continue;
+      
       if ((links[i]->visual.get() != NULL) &&
 	  (links[i]->visual->geometry.get() != NULL) && 
-	  (links[i]->visual->geometry->type == urdf::Geometry::MESH))// &&
+	  (links[i]->visual->geometry->type == urdf::Geometry::MESH))
 	{ 
 	  
 	  boost::shared_ptr<urdf::Mesh> mesh = boost::dynamic_pointer_cast<urdf::Mesh> (links[i]->visual->geometry);
@@ -168,12 +173,12 @@ void RobotState::GetTransforms(const sensor_msgs::JointState &joint_state,
 
   // get the vector of transformations
   // loop over all segments to compute the link transformation
+  current_tfs.clear();
   current_tfs.reserve(frame_map_.size());
+
   for (KDL::SegmentMap::const_iterator seg_it = segment_map_.begin(); 
        seg_it != segment_map_.end(); ++seg_it)
     {
-      //std::cout << "seg_it->second.segment.getName()"
-
       if (std::find(part_mesh_map_.begin(), 
 		    part_mesh_map_.end(), 
 		    seg_it->second.segment.getName()) != part_mesh_map_.end())

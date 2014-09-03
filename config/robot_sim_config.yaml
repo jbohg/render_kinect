@@ -1,0 +1,8 @@
+# These are the root links of the arms for reducing the number 
+# of meshes that are loaded into the search tree and for avoiding 
+# occluding meshes from the robot head links
+rendering_root_left: L_SHOULDER
+rendering_root_right: R_SHOULDER
+
+room_trans: [-1.5, 0.0, 1.0]
+room_quat:  [0.0, 0.530669, 0.379049, 0.758098]

@@ -12,13 +12,8 @@
     <param name="calib_url"  type="string"  value="$(arg calibration_url)" />
     <param name="noise"  type="string"  value="$(arg noise)" />
     <param name="background"  type="bool"  value="$(arg background)" />
-    <rosparam command="load" file="$(find render_kinect)/config/sim_config.yaml" />
+    <rosparam command="load" file="$(find render_kinect)/config/robot_sim_config.yaml" />
     <param name="robot_description_package_path" type="string" value="$(find arm_robot_model)" />
-    <rosparam command="load" file="$(find render_kinect)/config/sim_config.yaml" />
   </node>
-
-  <!-- This frame has to be published as the camera info in the bag files are relative to XTION_RGB (which should be XTION_IR) -->
-  <!-- If this frame is not published, then the CameraDisplay in Rviz won't work-->
-  <!--node pkg="tf" type="static_transform_publisher" name="$(arg camera)_IR_base_link1" args="0 0 0 0 0 0  $(arg camera) /$(arg camera)_RGB 100" /-->
 
 </launch>
