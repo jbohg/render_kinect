@@ -53,8 +53,7 @@ namespace render_kinect
   public:
     RobotObserver() :
       nh_priv_("~") ,
-      noisy_(false) ,
-      bg_init_(false)
+      noisy_(false) 
 
     {
       // get the path to the package
@@ -127,18 +126,12 @@ namespace render_kinect
       ///////////////////////////////////////////////////////////////////////////////
       robot_state_->GetTransforms(joint_state_, current_tfs_, false);
       
-      // PLEASE NOTE: If the robot is moving the camera, the room transformation has 
-      // to be computed every time. In that case remove the flag
-      if(!bg_init_) {
-	// compute room orientation using the robot base
-	Eigen::Affine3d room_tf;
-	if(!robot_state_->GetRoomTransform(room_tf))
-	  ROS_ERROR("Using camera frame transform before KDL data has been initialized");
-	// give it to the kinect simulator for rendering
-	simulator_->setRoomTransform(room_tf);
-	// make sure this happens only once
-	bg_init_ = true;
-      }
+      // compute room orientation using the robot base
+      Eigen::Affine3d room_tf;
+      if(!robot_state_->GetRoomTransform(room_tf))
+	ROS_ERROR("Using camera frame transform before KDL data has been initialized");
+      // give it to the kinect simulator for rendering
+      simulator_->setRoomTransform(room_tf);
 
       simulator_->simulatePublishMeasurement(current_tfs_);
       //simulator_->simulateStoreMeasurement(current_tfs_, 1, 1, 1);
@@ -154,7 +147,6 @@ namespace render_kinect
 
     std::vector<Eigen::Affine3d> current_tfs_;
 
-    bool bg_init_;
     bool noisy_;
 
   }; // class RobotObserver
