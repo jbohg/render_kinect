@@ -133,7 +133,7 @@ namespace render_kinect
       // give it to the kinect simulator for rendering
       simulator_->setRoomTransform(room_tf);
 
-      simulator_->simulatePublishMeasurement(current_tfs_);
+      simulator_->simulatePublishMeasurement(current_tfs_, jnt_stamp);
       //simulator_->simulateStoreMeasurement(current_tfs_, 1, 1, 1);
     }
 

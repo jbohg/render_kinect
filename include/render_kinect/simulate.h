@@ -154,7 +154,8 @@ namespace render_kinect {
 	storePointCloud("point_cloud", countf);
     }
 
-    void simulatePublishMeasurement(const std::vector<Eigen::Affine3d> &new_tfs) {
+    void simulatePublishMeasurement(const std::vector<Eigen::Affine3d> &new_tfs,
+				    ros::Time jnt_stamp) {
       countf++;
       
       // update old transform
@@ -179,22 +180,23 @@ namespace render_kinect {
       }
 
       // get the current time for synchronisation of all messages
-      ros::Time time = ros::Time::now ();
+      // ros::Time time = ros::Time::now ();
+      // use the time of the joints instead
 
       // publish TF frames
-      publishTransforms(time);
+      publishTransforms(jnt_stamp);
 
       // publish marker for background
-      // publishMarker(time);
+      // publishMarker(jnt_stamp);
 
       // publish camera info
-      publishCameraInfo(time);
+      publishCameraInfo(jnt_stamp);
 
       // publish depth image
-      publishDepthImage(time);
+      publishDepthImage(jnt_stamp);
 
       // publish point cloud
-      publishPointCloud(time);
+      publishPointCloud(jnt_stamp);
 
     }
 
