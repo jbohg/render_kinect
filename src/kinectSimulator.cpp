@@ -282,7 +282,8 @@ namespace render_kinect {
 
     // allocate memory for depth map and labels
     depth_map = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_64FC1);
-    depth_map.setTo(0.0);
+    depth_map.setTo(NAN);
+    //depth_map.setTo(0.0);
     labels = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_8UC3);
     labels.setTo(cv::Scalar(background_, background_, background_));
     cv::Mat disp(camera_.getHeight(), camera_.getWidth(), CV_32FC1);
