@@ -78,9 +78,7 @@ private:
   // Initialises the KDL data and specifically the camera pose
   void InitKDLData(const sensor_msgs::JointState &joint_state);
   
-  // compute the camera frame for the current joint angles
-  void SetCameraTransform();
-  
+ 
   // compute the transformations for all the links in one go
   void ComputeLinkTransforms();
 
@@ -103,8 +101,8 @@ private:
   // KDL kinematic tree
   KDL::Tree kin_tree_;
   // KDL Kinematic chain from camera to robot base
-  KDL::Chain base_2_cam_;
-
+  //KDL::Chain base_2_cam_;
+  
   // maps joint indices to joint names and joint limits
   std::vector<std::string> joint_map_;
   std::vector<float> lower_limit_;
@@ -119,15 +117,13 @@ private:
   KDL::SegmentMap segment_map_;
   // Forward kinematics solver
   KDL::TreeFkSolverPos_recursive *tree_solver_;
-  KDL::ChainFkSolverPos_recursive *chain_solver_;
+  //KDL::ChainFkSolverPos_recursive *chain_solver_;
 
   // KDL copy of the joint state
   KDL::JntArray jnt_array_;
   // Contains Camera pose relative to base
   KDL::Frame    cam_frame_;
-
-  // flag that determines whether KDL data has been initialized
-  bool initialized_;
+  std::string   cam_frame_name_;
 
   // rendering roots for left and right arm to exclude occluding head meshes
   std::string rendering_root_left_, rendering_root_right_;
