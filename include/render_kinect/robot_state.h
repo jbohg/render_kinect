@@ -50,7 +50,6 @@
 #include <urdf/model.h>
 #include <kdl_parser/kdl_parser.hpp>
 #include <kdl/treefksolverpos_recursive.hpp>
-#include <kdl/chainfksolverpos_recursive.hpp>
 
 // tools
 #include <render_kinect/objectMeshModel.h>
