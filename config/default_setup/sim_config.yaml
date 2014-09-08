@@ -1,0 +1,38 @@
+#For each object instance in the scene, point to mesh in 
+# $(find render_kinect)/obj_models/
+object_file_names: [
+ mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+,mugbox.obj
+]
+
+rotation_center: [0., 0., 0.06]
+
+frame_count: 100
+noise: GAUSSIAN #NONE
+background: false
+
+room_trans: [-1.5, 0.0, 1.0]
+room_quat:  [0.0, 0.530669, 0.379049, 0.758098]
+
+# process model parameter
+linear_acceleration_sigma: 0.10 #0.1  0.2  1.0
+angular_acceleration_sigma: 1.5 #1.5  3.0  15.0
+damping: 5.0 #5.0  20.0  1000.0
+
+desired_depth: 1.5
+d_gain: 5.0
+
