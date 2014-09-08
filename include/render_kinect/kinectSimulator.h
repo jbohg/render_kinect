@@ -73,10 +73,11 @@ namespace render_kinect
     Eigen::Affine3d room_tf_;
 
     Camera camera_;
-    static const float invalid_disp_ = 99999999.9;
-    static const float window_inlier_distance_ = 0.1;
-    //static constexpr float invalid_disp_ = 99999999.9;
-    //static constexpr float window_inlier_distance_ = 0.1;
+    // changed for c++ 11 compatibility
+//    static const float invalid_disp_ = 99999999.9;
+//    static const float window_inlier_distance_ = 0.1;
+    static constexpr float invalid_disp_ = 99999999.9;
+    static constexpr float window_inlier_distance_ = 0.1;
 
     void initRobot();
     void updateObjectPoses(const std::vector<Eigen::Affine3d> &p_transforms);

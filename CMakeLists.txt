@@ -4,6 +4,9 @@ project(render_kinect)
 set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_BUILD_TYPE Debug)
 
+add_definitions(-std=c++0x ) #print profiling output
+
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -133,4 +136,6 @@ add_executable(move_object src/move_object.cpp)
 target_link_libraries(move_object ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
 
 add_executable(generate_dataset src/generate_dataset.cpp)
-target_link_libraries(generate_dataset ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
+target_link_libraries(generate_dataset ${PROJECT_NAME}
+                                       yaml-cpp
+                                       ${catkin_LIBRARIES})
