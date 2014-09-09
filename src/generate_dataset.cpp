@@ -158,9 +158,6 @@ int main(int argc, char **argv)
                      rotate_var,
                      object_processes);
 
-
-
-
     // create process model
     double linear_acceleration_sigma;
     node_handle.getParam("linear_acceleration_sigma", linear_acceleration_sigma);
@@ -172,22 +169,10 @@ int main(int argc, char **argv)
     node_handle.getParam("rotation_center", rotation_center);
 
 
-
-
     MatrixXd linear_acceleration_covariance = MatrixXd::Identity(3, 3) * pow(double(linear_acceleration_sigma), 2);
     MatrixXd angular_acceleration_covariance = MatrixXd::Identity(3, 3) * pow(double(angular_acceleration_sigma), 2);
 
-//    vector<boost::shared_ptr<StationaryProcess<> > > partial_process_models(object_mesh_paths.size());
-//    for(size_t i = 0; i < partial_process_models.size(); i++)
-//    {
-//        boost::shared_ptr<BrownianObjectMotionModel<> > partial_process_model(new BrownianObjectMotionModel<>);
-//        partial_process_model->parameters(hf::Std2Eigen(rotation_center),
-//                                          damping,
-//                                          linear_acceleration_covariance,
-//                                          angular_acceleration_covariance);
-//        partial_process_models[i] = partial_process_model;
-//    }
-//    boost::shared_ptr<StationaryProcess<> > process_model(new ComposedStationaryProcessModel(partial_process_models));
+
     boost::shared_ptr<BrownianObjectMotionModel<FreeFloatingRigidBodiesState<-1>, -1> >
             process_model(new BrownianObjectMotionModel<FreeFloatingRigidBodiesState<-1>, -1>(object_mesh_paths.size()));
     for(size_t i = 0; i < object_mesh_paths.size(); i++)
