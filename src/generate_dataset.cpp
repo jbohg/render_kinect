@@ -59,6 +59,8 @@
 
 #include <math.h>
 
+#include <ros/time.h>
+
 
 using namespace std;
 using namespace Eigen;

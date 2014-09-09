@@ -21,7 +21,7 @@ object_file_names: [
 
 rotation_center: [0., 0., 0.06]
 
-frame_count: 10
+frame_count: 100
 noise: GAUSSIAN #NONE
 mean:  0.0
 std:   0.03
