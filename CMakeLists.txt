@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(render_kinect)
 
 set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE RelWithDebInfo)
 #set(CMAKE_BUILD_TYPE Debug)
 
 add_definitions(-std=c++0x ) #print profiling output
@@ -21,6 +22,10 @@ find_package(catkin REQUIRED
     cv_bridge
     tf
     tf_conversions
+    eigen_conversions
+    urdf 
+    orocos_kdl 
+    kdl_parser
     state_filtering
   )
 
@@ -114,6 +119,10 @@ catkin_package(
     cv_bridge
     tf
     tf_conversions
+    eigen_conversions
+    urdf
+    orocos_kdl
+    kdl_parser
     state_filtering
   DEPENDS OpenCV eigen 
 )
@@ -135,7 +144,11 @@ target_link_libraries(render_object ${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(move_object src/move_object.cpp)
 target_link_libraries(move_object ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
 
+add_executable(move_robot src/move_robot.cpp src/robot_state.cpp)
+target_link_libraries(move_robot ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
+
 add_executable(generate_dataset src/generate_dataset.cpp)
 target_link_libraries(generate_dataset ${PROJECT_NAME}
                                        yaml-cpp
                                        ${catkin_LIBRARIES})
+

@@ -106,11 +106,6 @@ namespace render_kinect
 	  numVertices_ += scene_->mMeshes[m]->mNumVertices;
 	}
 
-	std::cout << "adding " << scene_->mNumMeshes 
-		  << " meshes with " << numFaces_ 
-		  << " faces and " << numVertices_ 
-		  << " vertices" << std::endl;
-	
 	vertices_.resize(4,numVertices_);
 	unsigned v_idx=0;
 	
@@ -146,6 +141,11 @@ namespace render_kinect
 				       trans_vertices(1,m),
 				       trans_vertices(2,m));
       return start+numVertices_;
+    }
+
+    void  setOriginalTransform(const Eigen::Affine3d &transform)
+    {
+      original_transform_ = transform;
     }
 
     // Upload the triangle indices to the search tree

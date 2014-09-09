@@ -144,8 +144,8 @@ int main(int argc, char **argv)
       it->getNextTransform(current_tfs[it-object_processes.begin()]);
     
     // give pose and object name to renderer
-    Simulator.simulatePublishMeasurement(current_tfs);
-    //Simulator.simulateStoreMeasurement(current_tfs, 1, 1, 1);
+    //Simulator.simulatePublishMeasurement(current_tfs);
+    Simulator.simulateStoreMeasurement(current_tfs, 1, 1, 1);
 
     ROS_INFO("Rendering %d\n", i);
   }

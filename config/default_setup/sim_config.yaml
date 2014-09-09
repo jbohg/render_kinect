@@ -21,8 +21,12 @@ object_file_names: [
 
 rotation_center: [0., 0., 0.06]
 
-frame_count: 100
+frame_count: 10
 noise: GAUSSIAN #NONE
+mean:  0.0
+std:   0.03
+scale: 0.4
+
 background: false
 
 room_trans: [-1.5, 0.0, 1.0]

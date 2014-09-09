@@ -1,0 +1,21 @@
+# These are the root links of the arms for reducing the number 
+# of meshes that are loaded into the search tree and for avoiding 
+# occluding meshes from the robot head links
+rendering_root_left: L_SHOULDER
+rendering_root_right: R_SHOULDER
+
+# default position -> can be updated in the code 
+# for example by using the base frame
+room_trans: [0.0702693,1.48506,0.970068]
+room_quat:  [0.401297, 0.915905,-0.00883711,-0.00061783]
+
+
+# noise parameters
+#noise: NONE
+
+#noise: GAUSSIAN
+mean:  0.0
+std:   0.15
+
+noise: PERLIN
+scale: 0.4

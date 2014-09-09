@@ -109,6 +109,10 @@ namespace render_kinect
     std::vector<cv::Scalar> color_map_;
     static const uchar background_ = 160;
 
+    void setOriginalTransform(const std::vector<Eigen::Affine3d> &part_mesh_transforms);
+
+    void setRoomTransform(Eigen::Affine3d &room_tf);
+
     unsigned getNumMeshes ()const{return models_.size();};
 	
     uchar getBG ()const{return background_;}
@@ -120,6 +124,8 @@ namespace render_kinect
 		   cv::Mat &labels);
 
     sensor_msgs::CameraInfoPtr getCameraInfo (ros::Time time);
+    
+    void setOriginalTransforms(const std::vector<Eigen::Affine3d> &part_mesh_transforms);
 
     KinectSimulator(const CameraInfo &p_camera_info,
 		    std::vector<std::string> &object_paths,

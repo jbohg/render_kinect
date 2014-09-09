@@ -55,6 +55,17 @@ namespace render_kinect
     SIMPLEX,
     NONE
   };
+
+  class NoiseParams
+  {
+  public:
+    NoiseType type_;
+    
+    float mean_;
+    float std_;
+    float scale_;
+    
+  };
   
   class CameraInfo
   {
@@ -66,7 +77,7 @@ namespace render_kinect
     double cx_, cy_;
     double tx_;
 
-    NoiseType noise_;
+    NoiseParams noise_;
 
     std::string frame_id_;
   };

@@ -105,9 +105,15 @@ int main(int argc, char **argv)
   cam_info.tx_ = 0.075;
 
   // Type of noise
-  //  cam_info.noise_ = render_kinect::GAUSSIAN;
-  //  cam_info.noise_ = render_kinect::PERLIN;
-  cam_info.noise_ = render_kinect::NONE;
+  ///////////////////////////////////////////////////
+  // cam_info.noise_.type_ = render_kinect::GAUSSIAN;
+  // cam_info.noise_.mean_ = 0.0;
+  // cam_info.noise_.std_  = 0.15;
+  ///////////////////////////////////////////////////
+  // cam_info.noise_.type_  = render_kinect::PERLIN;
+  // cam_info.noise_.scale_ = 0.4;
+  ///////////////////////////////////////////////////
+  cam_info.noise_.type_ = render_kinect::NONE;
 
   // Test Transform
   Eigen::Affine3d transform(Eigen::Affine3d::Identity());

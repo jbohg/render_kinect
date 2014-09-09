@@ -65,6 +65,10 @@
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/AABB_polyhedron_triangle_primitive.h>
 
+// for activating the asserts
+// #undef NDEBUG
+#include <assert.h>
+
 #ifdef HAVE_OPENMP
 #include <omp.h>
 #endif
@@ -103,7 +107,7 @@ namespace render_kinect {
 				   const Eigen::Affine3d &room_tf) 
     : render_bg_(background)
     , camera_( p_camera_info)
-    , noise_type_(p_camera_info.noise_)
+    , noise_type_(p_camera_info.noise_.type_)
     , noise_gen_(NULL)
     , noisy_labels_(0)
     , room_tf_(room_tf)
@@ -182,18 +186,28 @@ namespace render_kinect {
     if(noise_type_==GAUSSIAN)
       {
 	//Gaussian Noise
-	float mean = 0.0;
-    float std  = 0.03;
-	noise_gen_ = new GaussianNoise( camera_.getWidth(), camera_.getHeight(), mean, std);
+//<<<<<<< HEAD
+//	float mean = 0.0;
+//    float std  = 0.03;
+//	noise_gen_ = new GaussianNoise( camera_.getWidth(), camera_.getHeight(), mean, std);
+//      } else if (noise_type_==PERLIN)
+//      {
+//    float scale = 0.4;
+//	noise_gen_ = new PerlinNoise( camera_.getWidth(), camera_.getHeight(), scale);
+//=======
+	//float mean = 0.0;
+	//float std  = 0.15;
+	noise_gen_ = new GaussianNoise( camera_.getWidth(), camera_.getHeight(), p_camera_info.noise_.mean_, p_camera_info.noise_.std_);
       } else if (noise_type_==PERLIN) 
       {
-    float scale = 0.4;
-	noise_gen_ = new PerlinNoise( camera_.getWidth(), camera_.getHeight(), scale);
+	//float scale = 0.4;
+	noise_gen_ = new PerlinNoise( camera_.getWidth(), camera_.getHeight(), p_camera_info.noise_.scale_);
       } else if (noise_type_==SIMPLEX) 
       {
-	float scale = 0.5;
-	noise_gen_ = new SimplexNoise( camera_.getWidth(), camera_.getHeight(), scale);
+	//float scale = 0.5;
+	noise_gen_ = new SimplexNoise( camera_.getWidth(), camera_.getHeight(), p_camera_info.noise_.scale_);
       }
+
   }
 
   // Destructor
@@ -203,6 +217,17 @@ namespace render_kinect {
       delete noise_gen_;
   }
 
+  void KinectSimulator::setOriginalTransform(const std::vector<Eigen::Affine3d> &part_mesh_transforms)
+  {
+    std::vector<boost::shared_ptr<ObjectMeshModel> >::const_iterator it;
+    for(it=models_.begin();it!=models_.end();++it)
+      {
+	(*it)->setOriginalTransform(part_mesh_transforms[it-models_.begin()]);
+      }
+  }
+
+  void KinectSimulator::setRoomTransform(Eigen::Affine3d &room_tf){room_tf_ = room_tf;}
+
   sensor_msgs::CameraInfoPtr KinectSimulator::getCameraInfo (ros::Time time)
   {
     return camera_.getCameraInfo(time);
@@ -211,12 +236,15 @@ namespace render_kinect {
   // Function that exchanges current object transform
   void KinectSimulator::updateObjectPoses(const std::vector<Eigen::Affine3d> &p_transforms)   
   {
+    //std::cout << "Size of Models: " << models_.size() << std::endl;
+    //std::cout << "Size of transforms " << p_transforms.size() << std::endl;
+
     assert(p_transforms.size()==models_.size());
     
     std::vector<boost::shared_ptr<ObjectMeshModel> >::const_iterator it;
     for(it=models_.begin();it!=models_.end();++it)
       (*it)->updateTransformation(p_transforms[it-models_.begin()]);
-    
+
     if(render_bg_)
       room_->updateTransformation(room_tf_);
   }
@@ -254,18 +282,20 @@ namespace render_kinect {
 				  cv::Mat &depth_map,
 				  cv::Mat &labels) 
   {
-    // Note that for this simple example case of one rigid object, 
-    // the tree would actually not needed 
-    // to be updated. Instead the camera could be moved and rays could be casted from these 
-    // new positions.
     // However, for articulated or multiple rigid objects that change their configuration over 
     // time, this update is necessary and is therefore kept in this code.
+    // If only  one object would be tracked, you could also change the camera pose. An update of the 
+    // AABB tree would not be needed.
     updateObjectPoses(p_transforms);
     updateTree();
 
     // allocate memory for depth map and labels
     depth_map = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_64FC1);
-    depth_map.setTo(3.0);
+//<<<<<<< HEAD
+//    depth_map.setTo(3.0);
+//=======
+    depth_map.setTo(NAN);
+    //depth_map.setTo(0.0);
     labels = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_8UC3);
     labels.setTo(cv::Scalar(background_, background_, background_));
     cv::Mat disp(camera_.getHeight(), camera_.getWidth(), CV_32FC1);
@@ -309,7 +339,7 @@ namespace render_kinect {
 		  min_dist = dist;
 		  // intersection coordinates
 		  min_p = point;
-		  // label of the intersected object (will be zero for this simple case)
+		  // label of the intersected object
 		  min_id = triangle_id;
 		}
 	      } else {
