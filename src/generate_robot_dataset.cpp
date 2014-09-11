@@ -138,7 +138,6 @@ namespace render_kinect
   private:
     void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg)
     {
-      ros::Time jnt_stamp = msg->header.stamp;
       joint_state_ = *msg;
       robot_state_->GetTransforms(joint_state_, current_tfs_);
 
@@ -159,9 +158,15 @@ namespace render_kinect
       sensor_msgs::ImagePtr image;
       sensor_msgs::CameraInfoPtr camera_info;
       simulator_->simulateMeasurement(current_tfs_, image, camera_info);
-      
+      // use time stamp for joint states as well
+      sensor_msgs::JointStatePtr stamped_state = boost::make_shared<sensor_msgs::JointState > (*msg);
+      stamped_state->header.stamp = image->header.stamp;
+      noisy_jnt_state->header.stamp = image->header.stamp;
+      stamped_state->header.seq = image->header.seq;
+      noisy_jnt_state->header.seq = image->header.seq;
+
       if(frame_count_ < max_frame_count_ && ros::ok()) {
-	dataset_->AddFrame(image, camera_info, msg, noisy_jnt_state, ground_truth_jnts, noisy_jnts);
+	dataset_->AddFrame(image, camera_info, stamped_state, noisy_jnt_state, ground_truth_jnts, noisy_jnts);
 	cout << frame_count_ << ", " << flush;
       }      
 

@@ -203,8 +203,8 @@ namespace render_kinect {
 
 
     void simulateMeasurement(const std::vector<Eigen::Affine3d>& new_tfs,
-                             sensor_msgs::ImagePtr& image,
-                             sensor_msgs::CameraInfoPtr& camera_info)
+			     sensor_msgs::ImagePtr& image,
+			     sensor_msgs::CameraInfoPtr& camera_info)
     {
         countf++;
         // update old transform
@@ -214,7 +214,6 @@ namespace render_kinect {
 
         // get the current time for synchronisation of all messages
         static ros::Time time = ros::Time::now();
-
 
         camera_info = object_models_->getCameraInfo(time);
 
@@ -245,12 +244,8 @@ namespace render_kinect {
 
         // publish point cloud
         publishPointCloud(time);
-
-
-        time += ros::Duration(1./30.);
-
-
-
+	
+	time += ros::Duration(1./30.);
     }
 
 

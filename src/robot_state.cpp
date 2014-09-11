@@ -255,7 +255,7 @@ void RobotState::GetNoisyJointVector(const sensor_msgs::JointState &state,
 				     Eigen::VectorXd &noisy_jnt_angles)
 {
   // copy old state into noisy state to keep joint names 
-  *noisy_state = state;
+  noisy_state = boost::make_shared<sensor_msgs::JointState > (state);
   
   noisy_jnt_angles.resize(num_joints());
   // loop over all joint and fill in KDL array
