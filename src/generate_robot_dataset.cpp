@@ -46,12 +46,7 @@
 #include <render_kinect/camera.h>
 #include <render_kinect/robot_state.h>
 
-#include <pose_tracking_interface/utils/tracking_dataset.hpp>
-//#include <pose_tracking/states/free_floating_rigid_bodies_state.hpp>
-//#include <fast_filtering/utils/helper_functions.hpp>
-//#include <fast_filtering/models/process_models/interfaces/stationary_process_model.hpp>
-//#include <pose_tracking/models/process_models/brownian_object_motion_model.hpp>
-
+#include <pose_tracking_interface/utils/robot_tracking_dataset.hpp>
 
 // Mostly reading tools
 #include <render_kinect/tools/rosread_utils.h>
@@ -82,7 +77,7 @@ namespace render_kinect
       boost::filesystem::path path_dataset = config_file;
       path_dataset = path_dataset.parent_path();
 
-      dataset_ = new TrackingDataset(path_dataset.string());
+      dataset_ = new RobotTrackingDataset(path_dataset.string());
       nh_priv_.getParam("frame_count", max_frame_count_);
 
       // get the relevant parameters
@@ -129,6 +124,8 @@ namespace render_kinect
 								      1,
 								      &RobotDataGenerator::jointStateCallback, 
 								      this);
+
+      std::cout << "max frame count: " << max_frame_count_ << " rendering frames: " << std::endl;
     }
 
     ~RobotDataGenerator()
@@ -148,8 +145,9 @@ namespace render_kinect
       Eigen::VectorXd ground_truth_jnts;
       robot_state_->GetJointVector(joint_state_, ground_truth_jnts);
 
+      sensor_msgs::JointStatePtr noisy_jnt_state;
       Eigen::VectorXd noisy_jnts;
-      robot_state_->GetJointVector(joint_state_, noisy_jnts, true);
+      robot_state_->GetNoisyJointVector(joint_state_, noisy_jnt_state, noisy_jnts);
 
       // compute room orientation using the robot base
       Eigen::Affine3d room_tf;
@@ -161,16 +159,19 @@ namespace render_kinect
       sensor_msgs::ImagePtr image;
       sensor_msgs::CameraInfoPtr camera_info;
       simulator_->simulateMeasurement(current_tfs_, image, camera_info);
-
-      if(frame_count_ < max_frame_count_ && ros::ok())
-	dataset_->AddFrame(image, camera_info, ground_truth_jnts, noisy_jnts);
       
+      if(frame_count_ < max_frame_count_ && ros::ok()) {
+	dataset_->AddFrame(image, camera_info, msg, noisy_jnt_state, ground_truth_jnts, noisy_jnts);
+	cout << frame_count_ << ", " << flush;
+      }      
+
       frame_count_++;
 
       if(dataset_->Size() == max_frame_count_) 
 	{
 	  dataset_->Store();
 	  joint_states_sub_.shutdown();
+	  ROS_INFO("Stored the dataset and stopped recording more data.");
 	}
     }
 
@@ -180,7 +181,7 @@ namespace render_kinect
     RobotState *robot_state_;
     Simulate *simulator_;
 
-    TrackingDataset *dataset_;
+    RobotTrackingDataset *dataset_;
     int max_frame_count_;
     int frame_count_;
 

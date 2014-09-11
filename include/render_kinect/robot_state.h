@@ -70,8 +70,14 @@ public:
 
   // convert JointState message to Eigen Vector
   void GetJointVector(const sensor_msgs::JointState &state, 
-		      Eigen::VectorXd &jnt_angles, bool noisy = false);
+		      Eigen::VectorXd &jnt_angles);
   
+  // generates a noisy JointState message and returns it in form
+  // of a JointState message and Eigen Vector
+  void GetNoisyJointVector(const sensor_msgs::JointState &state, 
+			   sensor_msgs::JointStatePtr &noisy_state, 
+			   Eigen::VectorXd &noisy_jnt_angles);
+
   // get the transform of the 'background' room based on the cam2base transform
   bool GetRoomTransform(Eigen::Affine3d &room_tf);
 
@@ -89,6 +95,8 @@ private:
   // Get the number of joints from the kinematic tree
   int num_joints();
 
+  double GetRandomPertubation(int jnt_index, double jnt_angle, double ratio);
+
   ros::NodeHandle nh_;
   ros::NodeHandle nh_priv_;
   std::string description_path_;
@@ -97,8 +105,6 @@ private:
   urdf::Model urdf_;
   // KDL kinematic tree
   KDL::Tree kin_tree_;
-  // KDL Kinematic chain from camera to robot base
-  //KDL::Chain base_2_cam_;
   
   // maps joint indices to joint names and joint limits
   std::vector<std::string> joint_map_;
@@ -114,7 +120,6 @@ private:
   KDL::SegmentMap segment_map_;
   // Forward kinematics solver
   KDL::TreeFkSolverPos_recursive *tree_solver_;
-  //KDL::ChainFkSolverPos_recursive *chain_solver_;
 
   // KDL copy of the joint state
   KDL::JntArray jnt_array_;
@@ -124,6 +129,12 @@ private:
 
   // rendering roots for left and right arm to exclude occluding head meshes
   std::string rendering_root_left_, rendering_root_right_;
+
+  // noise ratio relative to joint range
+  double ratio_std_;
+
+  // random number generator for getting noisy joint values
+  std::mt19937 generator_;
 
 };
 

@@ -58,6 +58,9 @@ RobotState::RobotState()
   nh_priv_.param<std::string>("robot_description_package_path", description_path_, "..");
   nh_priv_.param<std::string>("rendering_root_left", rendering_root_left_, "L_SHOULDER");
   nh_priv_.param<std::string>("rendering_root_right", rendering_root_right_, "R_SHOULDER");
+  
+  // initialise ratio of joint range as standard deviation
+  nh_priv_.param<double>("standard_dev", ratio_std_, 0.01);
 
   // create segment map for correct ordering of joints
   segment_map_ =  kin_tree_.getSegments();
@@ -95,7 +98,6 @@ RobotState::RobotState()
 RobotState::~RobotState()
 {
   delete tree_solver_;
-  //delete chain_solver_;
 }
 
 void RobotState::GetPartMeshData(std::vector<std::string> &part_mesh_paths,
@@ -229,8 +231,7 @@ void RobotState::ComputeLinkTransforms( )
 }
 
 void RobotState::GetJointVector(const sensor_msgs::JointState &state, 
-				Eigen::VectorXd &jnt_angles,
-				bool noisy)
+				Eigen::VectorXd &jnt_angles)
 {
   jnt_angles.resize(num_joints());
   // loop over all joint and fill in KDL array
@@ -249,6 +250,30 @@ void RobotState::GetJointVector(const sensor_msgs::JointState &state,
   
 }
 
+void RobotState::GetNoisyJointVector(const sensor_msgs::JointState &state,
+				     sensor_msgs::JointStatePtr &noisy_state,
+				     Eigen::VectorXd &noisy_jnt_angles)
+{
+  // copy old state into noisy state to keep joint names 
+  *noisy_state = state;
+  
+  noisy_jnt_angles.resize(num_joints());
+  // loop over all joint and fill in KDL array
+  for(std::vector<double>::const_iterator jnt = state.position.begin(); 
+      jnt !=state.position.end(); ++jnt)
+    {
+      int tmp_index = GetJointIndex(state.name[jnt-state.position.begin()]);
+      
+      if (tmp_index >=0) {
+	noisy_jnt_angles(tmp_index) = GetRandomPertubation( tmp_index, *jnt, ratio_std_);
+	noisy_state->position[jnt-state.position.begin()] = noisy_jnt_angles(tmp_index);	
+      } else 
+	ROS_ERROR("i: %d, No joint index for %s", 
+		  (int)(jnt-state.position.begin()), 
+		  state.name[jnt-state.position.begin()].c_str());
+    }
+}
+
 int RobotState::GetJointIndex(const std::string &name)
 {
     for (unsigned int i=0; i < joint_map_.size(); ++i)
@@ -260,4 +285,22 @@ int RobotState::GetJointIndex(const std::string &name)
 int RobotState::num_joints()
 {
   return kin_tree_.getNrOfJoints();
+}
+
+double RobotState::GetRandomPertubation(int jnt_index, double jnt_angle, double ratio)
+{
+  double mean = jnt_angle;
+  double range = upper_limit_[jnt_index]-lower_limit_[jnt_index];
+  double std  = ratio * range;
+  std::normal_distribution<double> normal(mean, std);
+  double val = normal(generator_);
+
+  // clip the values to the limits
+  if(val>upper_limit_[jnt_index])
+    val = upper_limit_[jnt_index];
+
+  if(val<lower_limit_[jnt_index])
+    val = lower_limit_[jnt_index];
+    
+  return val;
 }
