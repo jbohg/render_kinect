@@ -214,14 +214,16 @@ namespace render_kinect {
 
         // get the current time for synchronisation of all messages
         static ros::Time time = ros::Time::now();
+	static int seq = 0;
 
         camera_info = object_models_->getCameraInfo(time);
-
+	camera_info->header.seq = seq;
 
         cv::Mat depth_im_32f; // we have to convert the image to the appropriate encoding
         depth_im_.convertTo(depth_im_32f, CV_32FC1);
 
         cv_bridge::CvImage cv_img;
+	cv_img.header.seq = seq;
         cv_img.header.stamp = time;
         cv_img.header.frame_id = frame_id_;
         cv_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
@@ -246,6 +248,7 @@ namespace render_kinect {
         publishPointCloud(time);
 	
 	time += ros::Duration(1./30.);
+	seq++;
     }
 
 
