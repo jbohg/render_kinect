@@ -66,8 +66,11 @@ public:
 		       std::vector<Eigen::Affine3d> &part_mesh_transform);
   
   void GetTransforms(const sensor_msgs::JointState &joint_state, 
-		     std::vector<Eigen::Affine3d> &current_tfs,
-		     bool noisy = false);
+		     std::vector<Eigen::Affine3d> &current_tfs);
+
+  // convert JointState message to Eigen Vector
+  void GetJointVector(const sensor_msgs::JointState &state, 
+		      Eigen::VectorXd &jnt_angles, bool noisy = false);
   
   // get the transform of the 'background' room based on the cam2base transform
   bool GetRoomTransform(Eigen::Affine3d &room_tf);
@@ -76,14 +79,9 @@ private:
 
   // Initialises the KDL data and specifically the camera pose
   void InitKDLData(const sensor_msgs::JointState &joint_state);
-  
- 
+   
   // compute the transformations for all the links in one go
   void ComputeLinkTransforms();
-
-  // convert JointState message to Eigen Vector
-  void GetInitialJoints(const sensor_msgs::JointState &state, 
-			Eigen::VectorXd &jnt_angles);
 
   // Get the index of the joint name in the map
   int GetJointIndex(const std::string &name);

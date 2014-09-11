@@ -43,8 +43,6 @@
 
 
 #include <render_kinect/simulate.h>
-#include <render_kinect/random_process.h>
-#include <render_kinect/wiener_process.h>
 #include <render_kinect/camera.h>
 
 #include <pose_tracking_interface/utils/tracking_dataset.hpp>
@@ -65,35 +63,6 @@
 using namespace std;
 using namespace Eigen;
 using namespace ff;
-
-// Generate a process models for each object instance in the scene
-void getProcessModels(int n_objects, 
-                      Eigen::Affine3d &init_transform,
-                      double var_x,
-                      double var_y,
-                      double var_z,
-                      double var_angle,
-                      std::vector<render_kinect::WienerProcess> &object_processes)
-{
-    // create a Random Process to sample
-    // pertubation around initial transform
-    render_kinect::RandomProcess rand_proc(init_transform,
-                                           0.5,
-                                           0.5,
-                                           0,
-                                           var_angle);
-
-    for(int i=0; i<n_objects; ++i)
-    {
-        Eigen::Affine3d transform;
-        rand_proc.getNextTransform(transform);
-        object_processes.push_back( render_kinect::WienerProcess(transform,
-                                                                 var_x,
-                                                                 var_y,
-                                                                 var_z,
-                                                                 var_angle));
-    }
-}
 
 
 // main function that generated a number of sample outputs for a given object mesh. 
@@ -137,26 +106,6 @@ int main(int argc, char **argv)
                                       rosread_utils::renderBackground(node_handle),
                                       room_path,
                                       room_tf);
-
-
-
-    // Initial Transform for objects
-    Eigen::Affine3d transform(Eigen::Affine3d::Identity());
-    transform.translate(Eigen::Vector3d(0., 0., 1.3));
-    transform.rotate(Eigen::Quaterniond(0.906614,-0.282680,-0.074009,-0.304411));
-
-    // object state and process model and noise variances
-    double translate_var = 0.001;
-    double rotate_var = 0.005;
-    std::vector<render_kinect::WienerProcess> object_processes;
-
-    getProcessModels((int)object_mesh_paths.size(),
-                     transform,
-                     translate_var,
-                     translate_var,
-                     translate_var,
-                     rotate_var,
-                     object_processes);
 
     // create process model
     double linear_acceleration_sigma;

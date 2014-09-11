@@ -157,8 +157,7 @@ void RobotState::GetPartMeshData(std::vector<std::string> &part_mesh_paths,
 
 
 void RobotState::GetTransforms(const sensor_msgs::JointState &joint_state, 
-			       std::vector<Eigen::Affine3d> &current_tfs,
-			       bool noisy)
+			       std::vector<Eigen::Affine3d> &current_tfs)
 {
   // compute the link transforms given the joint angles
   InitKDLData(joint_state);
@@ -186,7 +185,7 @@ void RobotState::InitKDLData(const sensor_msgs::JointState &joint_state)
 {
   // convert joint_state into an EigenVector
   Eigen::VectorXd jnt_angles;
-  GetInitialJoints(joint_state, jnt_angles);
+  GetJointVector(joint_state, jnt_angles);
   // Internally, KDL array use Eigen Vectors
   jnt_array_.data = jnt_angles;
   // Given the new joint angles, compute all link transforms in one go
@@ -229,8 +228,9 @@ void RobotState::ComputeLinkTransforms( )
     }
 }
 
-void RobotState::GetInitialJoints(const sensor_msgs::JointState &state, 
-				  Eigen::VectorXd &jnt_angles)
+void RobotState::GetJointVector(const sensor_msgs::JointState &state, 
+				Eigen::VectorXd &jnt_angles,
+				bool noisy)
 {
   jnt_angles.resize(num_joints());
   // loop over all joint and fill in KDL array

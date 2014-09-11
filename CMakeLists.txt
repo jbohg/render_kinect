@@ -152,3 +152,8 @@ target_link_libraries(generate_dataset ${PROJECT_NAME}
                                        yaml-cpp
                                        ${catkin_LIBRARIES})
 
+add_executable(generate_robot_dataset src/generate_robot_dataset.cpp src/robot_state.cpp)
+target_link_libraries(generate_robot_dataset ${PROJECT_NAME}
+                                       yaml-cpp
+                                       ${catkin_LIBRARIES})
+

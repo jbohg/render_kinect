@@ -3,7 +3,7 @@
        into the "camera" namespace, and it is prepended to tf frame ids. -->
        
   <param name="use_sim_time" type="bool" value="false" />    
-  <arg name="config_file" default="/home/mwuethri_local/data/code_base/src/render_kinect/config/default_setup/sim_config.yaml" />
+  <arg name="config_file" default="$(find render_kinect)/config/default_setup/sim_config.yaml" />
   <arg name="camera" default="XTION" />
   <arg name="depth_frame" default="/$(arg camera)_IR" />
   <arg name="calibration_url"  default="$(find state_filtering)/config/xtion_calib.yaml" />
