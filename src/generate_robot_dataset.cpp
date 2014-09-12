@@ -66,7 +66,6 @@ namespace render_kinect
   public:
     RobotDataGenerator() :
       nh_priv_("~") ,
-      noisy_(false) ,
       frame_count_(0)
     {
       // get the path to the package
@@ -81,7 +80,6 @@ namespace render_kinect
       nh_priv_.getParam("frame_count", max_frame_count_);
 
       // get the relevant parameters
-      nh_priv_.param<bool>("noisy", noisy_, false);
       std::string joint_states_topic;
       nh_priv_.param<std::string>("joint_states_topic", joint_states_topic, "/joint_states");
       
