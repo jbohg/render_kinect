@@ -80,6 +80,7 @@ namespace render_kinect {
       ,  frame_id_( cam_info.frame_id_)
       ,  room_path_(room_path)
       ,  room_tf_(room_tf)
+      ,  n_vis_(500)
       {
 	// allocate memory for depth image
 	int w = cam_info.width_;
@@ -135,8 +136,7 @@ namespace render_kinect {
       // in case object is not in view, don't store any data
       // However, if background is used, there will be points in the point cloud
       // although they don't belong to the arm
-      int n_vis = 4000;
-      if(point_cloud_.rows<n_vis) {
+      if(point_cloud_.rows<n_vis_) {
 	std::cout << "Object not in view.\n";
 	return;
       }
@@ -173,8 +173,7 @@ namespace render_kinect {
       // in case object is not in view, don't store any data
       // However, if background is used, there will be points in the point cloud
       // although they don't belong to the object
-      int n_vis = 4000;
-      if(point_cloud_.rows<n_vis) {
+      if(point_cloud_.rows<n_vis_) {
 	std::cout << "Object not in view.\n";
 	return;
       }
@@ -198,6 +197,51 @@ namespace render_kinect {
       // publish point cloud
       publishPointCloud(jnt_stamp);
 
+    }
+
+    void simulateMeasurement(const std::vector<Eigen::Affine3d> &new_tfs, 
+			     cv::Mat &depth_image) 
+      {
+	countf++;
+      
+	// update old transform
+	transforms_ = new_tfs;
+
+	// simulate measurement of object and store in image, point cloud and labeled image
+	cv::Mat p_result;
+	object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_image, labels_);
+
+	double min_val, max_val;
+	minMaxLoc(rgb_vals_, &min_val, &max_val);
+
+	//      std::cout << "Min and Max value of rgb " << min_val << " " << max_val << std::endl;
+
+	// in case object is not in view, don't store any data
+	// However, if background is used, there will be points in the point cloud
+	// although they don't belong to the object
+	if(point_cloud_.rows<n_vis_) {
+	  std::cout << "Object not in view.\n";
+	  return ;
+	}
+      }
+
+    void getPCLCloud(pcl::PointCloud<pcl::PointXYZ> &cloud)
+    {
+      if(point_cloud_.rows<n_vis_)
+	return;
+      
+      // Fill in the cloud data
+      cloud.width = point_cloud_.rows;
+      cloud.height = 1;
+      cloud.is_dense = false;
+      cloud.points.resize(cloud.width * cloud.height);
+      
+      for (int i = 0; i < point_cloud_.rows; i++) {
+	const float* point = point_cloud_.ptr<float>(i);
+	cloud.points[i].x = point[0];
+	cloud.points[i].y = point[1];
+	cloud.points[i].z = point[2];
+      }
     }
 
   private:
@@ -365,22 +409,17 @@ namespace render_kinect {
 	}
     }
 
-    void storePointCloud(std::string prefix, 
-			 int count)
+    void getPCLCloud(pcl::PointCloud<pcl::PointXYZRGB> &cloud)
     {
-
-#ifdef HAVE_PCL
-      std::stringstream lD;
-      lD << out_path_ << prefix << std::setw(3)
-	 << std::setfill('0') << count << ".pcd";
-
-      pcl::PointCloud<pcl::PointXYZRGB> cloud;
+      if(point_cloud_.rows<n_vis_)
+	return;
+      
       // Fill in the cloud data
       cloud.width = point_cloud_.rows;
       cloud.height = 1;
       cloud.is_dense = false;
       cloud.points.resize(cloud.width * cloud.height);
-	
+      
       for (int i = 0; i < point_cloud_.rows; i++) {
 	const float* point = point_cloud_.ptr<float>(i);
 	const float* rgb = rgb_vals_.ptr<float>(i);
@@ -389,7 +428,23 @@ namespace render_kinect {
 	cloud.points[i].z = point[2];
 	cloud.points[i].rgb = rgb[0];
       }
-	
+    }
+
+    void storePointCloud(std::string prefix, 
+			 int count)
+    {
+#ifdef HAVE_PCL
+      std::stringstream lD;
+      lD << out_path_ << prefix << std::setw(3)
+	 << std::setfill('0') << count << ".pcd";
+      
+      pcl::PointCloud<pcl::PointXYZRGB> cloud;
+      getPCLCloud(cloud);
+      if(cloud.points.size()==0) {
+	std::cout << "Cannot store empty point cloud" << std::endl;
+	return;
+      }
+
       if (pcl::io::savePCDFileBinary(lD.str(), cloud) != 0)
 	std::cout << "Couldn't store point cloud at " << lD.str() << std::endl;
 
@@ -419,6 +474,7 @@ namespace render_kinect {
     Eigen::Affine3d room_tf_; 
     ros::Publisher vis_pub;
     
+    int n_vis_;
   };
 
 } //namespace render_kinect

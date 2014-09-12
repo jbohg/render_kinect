@@ -23,6 +23,7 @@ find_package(catkin REQUIRED
     urdf 
     orocos_kdl 
     kdl_parser
+    grasp_database
   )
 
 # There exist different versions of the assimp library for different 
@@ -62,38 +63,6 @@ if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_OMP")
 endif(OPENMP_FOUND)
 
-
-
-
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
-
-#######################################
-## Declare ROS messages and services ##
-#######################################
-
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
-
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
-
-## Generate added messages and services with any dependencies listed here
-#generate_messages(
-#  DEPENDENCIES
-#  sensor_msgs  # Or other packages containing msgs
-#  )
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -119,14 +88,16 @@ catkin_package(
     urdf
     orocos_kdl
     kdl_parser
+    grasp_database
   DEPENDS OpenCV eigen 
 )
 
 ###########
 ## Build ##
 ###########
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
 
-include_directories(include)
 file(GLOB_RECURSE HEADERS include/*.hpp include/*.h)
 
 add_library(${PROJECT_NAME} src/kinectSimulator.cpp src/noiseutils.cpp ${HEADERS})
@@ -140,3 +111,6 @@ target_link_libraries(move_object ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
 
 add_executable(move_robot src/move_robot.cpp src/robot_state.cpp)
 target_link_libraries(move_robot ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
+
+add_executable(test_adding_to_db src/test_point_cloud_from_database_add.cpp)
+target_link_libraries(test_adding_to_db ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES} boost_program_options)
