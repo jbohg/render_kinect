@@ -65,6 +65,41 @@ namespace{
     bool g_debug = false;
 }
 
+bool Convert_depth_to_point_cloud( const cv::Mat &p_depth_im,
+				   const render_kinect::CameraInfo &cam_info, 
+				   pcl::PointCloud<pcl::PointXYZ> &point_cloud)
+{
+  unsigned w = cam_info.width_;
+  unsigned h = cam_info.height_;
+  float fx = cam_info.fx_;
+  float fy = cam_info.fy_;
+  float cx = cam_info.cx_;
+  float cy = cam_info.cy_;
+  float z_near = cam_info.z_near_;
+  float z_far  = cam_info.z_far_;
+  
+  point_cloud.points.clear();
+  point_cloud.points.reserve(w*h);
+  for (unsigned r = 0; r < h; ++r) {
+    const float* depth_map_i = p_depth_im.ptr<float>(r);
+    for (unsigned c = 0; c < w; ++c) {
+      float d = depth_map_i[c];
+      // the maximal depth value is 1.0
+      if (d > z_near && d == d && d < z_far) {
+	pcl::PointXYZ point;
+	point.z = d;
+	point.x = (point.z / fx) * (c - cx);
+	point.y = (point.z / fy) * (r - cy);
+	point_cloud.points.push_back(point);
+      }
+    }
+  }
+
+  point_cloud.width = point_cloud.points.size();
+  point_cloud.height = 1;
+  point_cloud.is_dense = false;
+}
+
 bool Store_png(const cv::Mat &image, const std::string file_path_image) {
     cv::Mat tmp_image;
     convertScaleAbs(image, tmp_image, 255.0f);
@@ -109,7 +144,11 @@ bool Update_database(int argc,
 
     grasp_database::Grasp_database grasp_db(file_path_database);
 
-    if(grasp_db.Has_object_pointclouds(object_type)){
+    // render type to distingiush between pure depth 
+    // and openGL truncated pyramid style
+    std::string render_type = "kinect_sim";
+
+    if(grasp_db.Has_object_pointclouds(object_type, render_type)){
         std::cout << "already generated " << object_type << std::endl;
         return true;
     }
@@ -159,6 +198,7 @@ bool Update_database(int argc,
     // set noise type
     cam_info.noise_.type_ = render_kinect::PERLIN;
     cam_info.noise_.scale_ = 0.2;
+    
 
     //! Test Transform
     Eigen::Affine3d transform(Eigen::Affine3d::Identity());
@@ -213,7 +253,6 @@ bool Update_database(int argc,
 	  Simulator.simulateMeasurement(transforms, depth_image);
 	  depth_images.push_back(depth_image);
 	  
-	  file_cnt++;
 	  if (g_debug) {
 	    std::stringstream unique_name;
 	    unique_name << object_type  << "_" << 
@@ -229,7 +268,7 @@ bool Update_database(int argc,
 	    }
 	  }
 
-	  Simulator.getPCLCloud(point_cloud);
+	  Convert_depth_to_point_cloud(depth_image, cam_info, point_cloud);
 	  if(point_cloud.points.size()==0) {
 	    std::cout << "could not convert pointcloud" << std::endl;
 	    return false;
@@ -256,9 +295,11 @@ bool Update_database(int argc,
 	    else 
 	      std::cout << "Stored point cloud at " << name << std::endl;
 	  }
+	  file_cnt++;
         }
     }
 
+    
     grasp_db.Append_object_pointcloud(object_type,
             object_positions,
             object_orientations,
@@ -270,7 +311,8 @@ bool Update_database(int argc,
             camera_z_near,
             camera_z_far,
             camera_fx,
-            camera_fy);
+	    camera_fy,
+	    render_type);
 
 
     Eigen::Vector3f tmp_object_position;
@@ -278,12 +320,14 @@ bool Update_database(int argc,
     cv::Mat tmp_depth_image_stored;
     pcl::PointCloud<pcl::PointXYZ> tmp_point_cloud_stored;
 
-    for(unsigned int i = 0; i < object_positions.size(); ++i){
-        grasp_db.Get_object_pointcloud(object_type,
-                tmp_object_position,
-                tmp_object_orientation,
-                tmp_depth_image_stored,
-                i);
+    for(unsigned int i = 0; i < object_positions.size(); ++i)
+      {
+	grasp_db.Get_object_pointcloud(object_type,
+				       render_type,
+				       tmp_object_position,
+				       tmp_object_orientation,
+				       tmp_depth_image_stored,
+				       i);
         assert(object_positions[i].x() == tmp_object_position.x());
         assert(object_positions[i].y() == tmp_object_position.y());
         assert(object_positions[i].z() == tmp_object_position.z());
@@ -302,12 +346,13 @@ bool Update_database(int argc,
         for(unsigned int j = 0; j< tmp_depth_image_orig.total()*byte_offset; ++j){
             assert(*(data_orig+j) == *(data_stored+j));
         }
-
-        grasp_db.Get_object_pointcloud(object_type,
-                tmp_object_position,
-                tmp_object_orientation,
-                tmp_point_cloud_stored,
-                i);
+	
+	grasp_db.Get_object_pointcloud(object_type,
+				       render_type,
+				       tmp_object_position,
+				       tmp_object_orientation,
+				       tmp_point_cloud_stored,
+				       i);
 
         assert(object_positions[i].x() == tmp_object_position.x());
         assert(object_positions[i].y() == tmp_object_position.y());

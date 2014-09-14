@@ -119,7 +119,7 @@ namespace render_kinect {
     {
       object_models_->setOriginalTransform(part_mesh_transforms);
     }
-    
+
     void simulateStoreMeasurement(const std::vector<Eigen::Affine3d> &new_tfs, 
 				  bool store_depth, 
 				  bool store_label, 
@@ -130,7 +130,6 @@ namespace render_kinect {
       transforms_ = new_tfs;
 
       // simulate measurement of object and store in image, point cloud and labeled image
-      cv::Mat p_result;
       object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_im_, labels_);
       
       // in case object is not in view, don't store any data
@@ -162,12 +161,12 @@ namespace render_kinect {
       transforms_ = new_tfs;
 
       // simulate measurement of object and store in image, point cloud and labeled image
-      cv::Mat p_result;
       object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_im_, labels_);
 
+      /*
       double min_val, max_val;
       minMaxLoc(rgb_vals_, &min_val, &max_val);
-
+      */
       //      std::cout << "Min and Max value of rgb " << min_val << " " << max_val << std::endl;
 
       // in case object is not in view, don't store any data
@@ -206,16 +205,13 @@ namespace render_kinect {
       
 	// update old transform
 	transforms_ = new_tfs;
-
 	// simulate measurement of object and store in image, point cloud and labeled image
-	cv::Mat p_result;
-	object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_image, labels_);
-
-	double min_val, max_val;
-	minMaxLoc(rgb_vals_, &min_val, &max_val);
-
-	//      std::cout << "Min and Max value of rgb " << min_val << " " << max_val << std::endl;
-
+	cv::Mat depth_result;
+	cv::Mat tmp_result;
+	object_models_->intersect(transforms_, point_cloud_, rgb_vals_, depth_result, labels_);
+	depth_result.convertTo(tmp_result, CV_32F);
+	depth_image = tmp_result.clone();
+	
 	// in case object is not in view, don't store any data
 	// However, if background is used, there will be points in the point cloud
 	// although they don't belong to the object
