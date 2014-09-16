@@ -301,6 +301,7 @@ bool Update_database(int argc,
 
     
     grasp_db.Append_object_pointcloud(object_type,
+				      render_type,
             object_positions,
             object_orientations,
             depth_images,
@@ -311,8 +312,7 @@ bool Update_database(int argc,
             camera_z_near,
             camera_z_far,
             camera_fx,
-	    camera_fy,
-	    render_type);
+	    camera_fy);
 
 
     Eigen::Vector3f tmp_object_position;
