@@ -114,3 +114,6 @@ target_link_libraries(move_robot ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES})
 
 add_executable(test_adding_to_db src/test_point_cloud_from_database_add.cpp)
 target_link_libraries(test_adding_to_db ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES} boost_program_options)
+
+add_executable(add_kinect_pointcloud_to_database src/add_pointcloud_to_database.cpp)
+target_link_libraries(add_kinect_pointcloud_to_database ${PROJECT_NAME} yaml-cpp ${catkin_LIBRARIES} boost_program_options)
