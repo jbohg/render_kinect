@@ -111,6 +111,9 @@ bool Store_png(const cv::Mat &image, const std::string file_path_image) {
 
 bool Store_point_cloud(const pcl::PointCloud<pcl::PointXYZ> &point_cloud,
         const std::string &file_path_point_cloud) {
+
+  std::cout << "Size of point cloud " << point_cloud.size() << std::endl;
+  std::cout << "File path point cloud " << file_path_point_cloud << std::endl;
     if (pcl::io::savePCDFileBinary(file_path_point_cloud, point_cloud) != 0) {
         std::cout << "ERROR Couldn't store point cloud "
             << file_path_point_cloud << std::endl;
@@ -300,21 +303,19 @@ bool Update_database(int argc,
     }
 
     
-    grasp_db.Append_object_pointcloud(object_type,
-				      render_type,
-            object_positions,
-            object_orientations,
-            depth_images,
-            camera_width,
-            camera_height,
-            camera_cx,
-            camera_cy,
-            camera_z_near,
-            camera_z_far,
-            camera_fx,
-	    camera_fy);
-
-
+    grasp_db.Set_object_pointcloud(object_type,
+				   render_type,
+				   object_positions,
+				   object_orientations,
+				   depth_images,
+				   camera_width,
+				   camera_height,
+				   camera_cx,
+				   camera_cy,
+				   camera_z_near,
+				   camera_z_far,
+				   camera_fx,
+				   camera_fy);
     Eigen::Vector3f tmp_object_position;
     Eigen::Quaternionf tmp_object_orientation;
     cv::Mat tmp_depth_image_stored;
