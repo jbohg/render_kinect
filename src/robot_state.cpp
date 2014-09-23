@@ -35,6 +35,7 @@
 #include <render_kinect/robot_state.h>
 #include <boost/random/normal_distribution.hpp>
 #include <eigen_conversions/eigen_kdl.h>
+#include <tf_conversions/tf_kdl.h>
 
 RobotState::RobotState()
   : nh_priv_("~")
@@ -93,11 +94,15 @@ RobotState::RobotState()
 
   // initialise kinematic tree solver
   tree_solver_ = new KDL::TreeFkSolverPos_recursive(kin_tree_);
+
+  // intialise the robot_state publisher
+  robot_state_publisher_ = new robot_state_pub::RobotStatePublisher(kin_tree_);
 }
 
 RobotState::~RobotState()
 {
   delete tree_solver_;
+  delete robot_state_publisher_;
 }
 
 void RobotState::GetPartMeshData(std::vector<std::string> &part_mesh_paths,
@@ -183,6 +188,8 @@ void RobotState::GetTransforms(const sensor_msgs::JointState &joint_state,
     }
 }
 
+
+
 void RobotState::InitKDLData(const sensor_msgs::JointState &joint_state)
 {
   // convert joint_state into an EigenVector
@@ -247,6 +254,30 @@ void RobotState::GetJointVector(const sensor_msgs::JointState &state,
 		  (int)(jnt-state.position.begin()), 
 		  state.name[jnt-state.position.begin()].c_str());
     }
+  
+}
+
+void RobotState::GetJointVector(const sensor_msgs::JointState &state, 
+				const ros::Time &time,
+				const std::string &tf_prefix,
+				std::vector<tf::StampedTransform> &tf_transforms, 
+				std::vector<tf::StampedTransform> &fixed_tf_transforms)
+{
+  // loop over all joint and fill in joint map
+  std::map<std::string, double> joint_positions;
+  for(std::vector<double>::const_iterator jnt = state.position.begin(); 
+      jnt !=state.position.end(); ++jnt)
+    joint_positions[state.name[jnt-state.position.begin()]] = *jnt;
+
+  tf_transforms.clear(); 
+  fixed_tf_transforms.clear();
+  robot_state_publisher_->getTransforms(joint_positions,
+					time,
+					tf_prefix,
+					tf_transforms);
+  robot_state_publisher_->getFixedTransforms(time,
+					     tf_prefix,
+					     fixed_tf_transforms);
   
 }
 

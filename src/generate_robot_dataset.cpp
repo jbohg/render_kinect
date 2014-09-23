@@ -48,8 +48,9 @@
 
 #include <pose_tracking_interface/utils/robot_tracking_dataset.hpp>
 
-// Mostly reading tools
+// Reading and conversion tools
 #include <render_kinect/tools/rosread_utils.h>
+#include <render_kinect/tools/tf_utils.h>
 
 #include <math.h>
 
@@ -155,7 +156,7 @@ namespace render_kinect
 
       sensor_msgs::ImagePtr image;
       sensor_msgs::CameraInfoPtr camera_info;
-      simulator_->simulateMeasurement(current_tfs_, image, camera_info);
+      simulator_->simulateMeasurement(current_tfs_, image, camera_info, false);
       // use time stamp for joint states as well
       sensor_msgs::JointStatePtr stamped_state = boost::make_shared<sensor_msgs::JointState > (*msg);
       stamped_state->header.stamp = image->header.stamp;
@@ -163,8 +164,19 @@ namespace render_kinect
       stamped_state->header.seq = image->header.seq;
       noisy_jnt_state->header.seq = image->header.seq;
 
+      // get the tf for the real data set and with the correct time stamp
+      tf::tfMessagePtr tf_msg, tf_fixed_msg;
+      getTFMessage(image->header.stamp, "", tf_msg, tf_fixed_msg);
+      
       if(frame_count_ < max_frame_count_ && ros::ok()) {
-	dataset_->AddFrame(image, camera_info, stamped_state, noisy_jnt_state, ground_truth_jnts, noisy_jnts);
+	dataset_->AddFrame(image, 
+			   camera_info, 
+			   stamped_state, 
+			   noisy_jnt_state, 
+			   tf_msg,
+			   tf_fixed_msg,
+			   ground_truth_jnts, 
+			   noisy_jnts);
 	cout << frame_count_ << ", " << flush;
       }      
 
@@ -176,6 +188,27 @@ namespace render_kinect
 	  joint_states_sub_.shutdown();
 	  ROS_INFO("Stored the dataset and stopped recording more data.");
 	}
+    }
+
+    void getTFMessage(const ros::Time &time,
+		      const std::string &tf_prefix,
+		      tf::tfMessagePtr &tf_msg,
+		      tf::tfMessagePtr &tf_fixed_msg)
+    {
+      std::vector<tf::StampedTransform> tf_transforms;
+      std::vector<tf::StampedTransform> fixed_tf_transforms;
+      robot_state_->GetJointVector(joint_state_, 
+				   time,
+				   tf_prefix,
+				   tf_transforms,
+				   fixed_tf_transforms);
+      tf_utils::getTransform(tf_transforms,
+			     tf_prefix,
+			     tf_msg);
+
+      tf_utils::getTransform(fixed_tf_transforms,
+			     tf_prefix,
+			     tf_fixed_msg);
     }
 
     ros::NodeHandle nh_priv_;

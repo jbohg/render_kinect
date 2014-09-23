@@ -272,7 +272,7 @@ namespace render_kinect {
     }
 
     search_->tree.rebuild(search_->triangles.begin(), search_->triangles.end());
-    search_->tree.accelerate_distance_queries();
+    //search_->tree.accelerate_distance_queries();
   }
 
   // Function that intersects rays with the object model at current state.

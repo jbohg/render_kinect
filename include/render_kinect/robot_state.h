@@ -51,6 +51,10 @@
 #include <kdl_parser/kdl_parser.hpp>
 #include <kdl/treefksolverpos_recursive.hpp>
 
+#include <robot_state_pub/robot_state_publisher.h>
+
+#include <tf/tf.h>
+
 // tools
 #include <render_kinect/objectMeshModel.h>
 
@@ -68,9 +72,20 @@ public:
   void GetTransforms(const sensor_msgs::JointState &joint_state, 
 		     std::vector<Eigen::Affine3d> &current_tfs);
 
+  /* void GetTransforms(const sensor_msgs::JointState &joint_state,  */
+  /* 		     std::vector<Eigen::Affine3d> &current_tfs, */
+  /* 		     std::vector<tf::StampedTransform> &tf_transforms); */
+
   // convert JointState message to Eigen Vector
   void GetJointVector(const sensor_msgs::JointState &state, 
 		      Eigen::VectorXd &jnt_angles);
+
+  // convert joint angles into a joint map
+  void GetJointVector(const sensor_msgs::JointState &state, 
+		      const ros::Time &time,
+		      const std::string &tf_prefix,
+		      std::vector<tf::StampedTransform> &tf_transforms, 
+		      std::vector<tf::StampedTransform> &fixed_tf_transforms);
   
   // generates a noisy JointState message and returns it in form
   // of a JointState message and Eigen Vector
@@ -136,6 +151,9 @@ private:
   // random number generator for getting noisy joint values
   std::mt19937 generator_;
 
+  // for the conversion to tf message
+  robot_state_pub::RobotStatePublisher *robot_state_publisher_;
+  
 };
 
 #endif //ROBOT_STATE_H_

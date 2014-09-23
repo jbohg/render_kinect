@@ -204,7 +204,8 @@ namespace render_kinect {
 
     void simulateMeasurement(const std::vector<Eigen::Affine3d>& new_tfs,
 			     sensor_msgs::ImagePtr& image,
-			     sensor_msgs::CameraInfoPtr& camera_info)
+			     sensor_msgs::CameraInfoPtr& camera_info,
+			     bool publish_tf = true)
     {
         countf++;
         // update old transform
@@ -233,7 +234,8 @@ namespace render_kinect {
 
 
         // publish TF frames
-        publishTransforms(time);
+	if (publish_tf)
+	  publishTransforms(time);
 
         // publish marker for background
         //publishMarker(time);
