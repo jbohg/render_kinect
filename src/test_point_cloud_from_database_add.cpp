@@ -145,7 +145,7 @@ bool Update_database(int argc,
         const std::string &object_type,
         int samples_per_half_circle) {
 
-    grasp_database::Grasp_database grasp_db(file_path_database);
+  grasp_database::Grasp_database grasp_db(file_path_database);
 
     // render type to distingiush between pure depth 
     // and openGL truncated pyramid style
@@ -170,10 +170,12 @@ bool Update_database(int argc,
         std::cout << "tmp file path object " << TMP_FILE_PATH_OBJECT
             << std::endl;
     }
+    /*
     if (!grasp_db.Store_object(object_type, TMP_FILE_PATH_OBJECT)) {
         std::cout << "could not store object " << object_type << std::endl;
         return false;
     }
+    */
 
     std::vector<std::string> object_paths;
     object_paths.push_back(TMP_FILE_PATH_OBJECT);
@@ -302,7 +304,7 @@ bool Update_database(int argc,
         }
     }
 
-    
+    /*
     grasp_db.Set_object_pointcloud(object_type,
 				   render_type,
 				   object_positions,
@@ -316,6 +318,7 @@ bool Update_database(int argc,
 				   camera_z_far,
 				   camera_fx,
 				   camera_fy);
+    
     Eigen::Vector3f tmp_object_position;
     Eigen::Quaternionf tmp_object_orientation;
     cv::Mat tmp_depth_image_stored;
@@ -371,6 +374,7 @@ bool Update_database(int argc,
             assert(fabs(it->z - it_stored->z) < 1.0e-7);
         }
     }
+    */
 
     return true;
 }
@@ -378,7 +382,7 @@ bool Update_database(int argc,
 int main(int argc, char **argv) {
 
   // initialize ros
-  ros::init(argc, argv, "test_add_depth_images_to_db");
+  //ros::init(argc, argv, "test_add_depth_images_to_db");
 
     try {
         std::string application_name = boost::filesystem::basename(argv[0]);

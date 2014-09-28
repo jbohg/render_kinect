@@ -80,7 +80,7 @@ namespace render_kinect {
       ,  frame_id_( cam_info.frame_id_)
       ,  room_path_(room_path)
       ,  room_tf_(room_tf)
-      ,  n_vis_(500)
+      ,  n_vis_(0)
       {
 	// allocate memory for depth image
 	int w = cam_info.width_;
