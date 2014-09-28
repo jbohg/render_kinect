@@ -65,23 +65,29 @@ namespace{
 
 
 
-Eigen::Quaterniond Get_rotation(int step_x, int step_y,
-				float radian_of_rotation_per_step) 
+Eigen::Quaterniond Get_rotation(
+        int step_x, 
+        int step_y,
+        float radian_of_rotation_per_step) 
 {
   Eigen::Quaterniond result(0, 1, 0, 0);
-  Eigen::Quaterniond q_x(Eigen::AngleAxisd(step_x*radian_of_rotation_per_step, Eigen::Vector3d::UnitX()));
-  Eigen::Quaterniond q_y(Eigen::AngleAxisd(step_y*radian_of_rotation_per_step, Eigen::Vector3d::UnitY()));
-
+  Eigen::Quaterniond q_x(Eigen::AngleAxisd(
+              step_x*radian_of_rotation_per_step, 
+              Eigen::Vector3d::UnitX()));
+  Eigen::Quaterniond q_y(Eigen::AngleAxisd(
+              step_y*radian_of_rotation_per_step, 
+              Eigen::Vector3d::UnitY()));
   result = q_x*result;
   result = q_y*result;
   return result;
 }
 
-bool Update_database(int argc,
-		     char** argv,
-		     const std::string &file_path_database,
-		     const std::string &object_type,
-		     int samples_per_half_circle) {
+bool Update_database(
+        int argc,
+        char** argv,
+        const std::string &file_path_database,
+        const std::string &object_type,
+        int samples_per_half_circle) {
 
   grasp_database::Grasp_database grasp_db(file_path_database);
 
@@ -106,7 +112,7 @@ bool Update_database(int argc,
     + object_type + ".ply";
   if (g_debug) {
     std::cout << "tmp file path object " << TMP_FILE_PATH_OBJECT
-	      << std::endl;
+          << std::endl;
   }
   if (!grasp_db.Store_object(object_type, TMP_FILE_PATH_OBJECT)) {
     std::cout << "could not store object " << object_type << std::endl;
@@ -146,8 +152,8 @@ bool Update_database(int argc,
 
   //! Kinect Simulator
   render_kinect::Simulate Simulator(cam_info, 
-				    object_paths,
-				    dot_pattern_path);
+                    object_paths,
+                    dot_pattern_path);
 
   cv::Mat depth_image;
 
@@ -189,27 +195,28 @@ bool Update_database(int argc,
       // give pose and object name to renderer
       Simulator.simulateMeasurement(transforms, depth_image);
       depth_images.push_back(depth_image);
-	  	  
+            
       // we do not need to change the orientation
       // because the viewpoint orientation does never change
       object_positions.push_back(transform.translation().cast<float>());
-      object_orientations.push_back(Eigen::Quaternionf(transform.rotation().cast<float>()));
+      object_orientations.push_back(
+              Eigen::Quaternionf(transform.rotation().cast<float>()));
     }
   }
     
   grasp_db.Set_object_pointcloud(object_type,
-				 render_type,
-				 object_positions,
-				 object_orientations,
-				 depth_images,
-				 camera_width,
-				 camera_height,
-				 camera_cx,
-				 camera_cy,
-				 camera_z_near,
-				 camera_z_far,
-				 camera_fx,
-				 camera_fy);
+                 render_type,
+                 object_positions,
+                 object_orientations,
+                 depth_images,
+                 camera_width,
+                 camera_height,
+                 camera_cx,
+                 camera_cy,
+                 camera_z_near,
+                 camera_z_far,
+                 camera_fx,
+                 camera_fy);
     
   return true;
 }
@@ -238,16 +245,19 @@ int main(int argc, char **argv) {
 
     try {
       po::store(
-		po::command_line_parser(argc, argv).options(desc).positional(
-									     positionalOptions).run(), vm);
+        po::command_line_parser(argc, argv).options(desc).positional(
+                                         positionalOptions).run(), vm);
       /** --help option
        */
       if (vm.count("help")) {
-	std::cout
-	  << "point clouds from different views for an object stored in the database"
-	  << std::endl << std::endl << desc << std::endl
-	  << std::endl;
-	return 0;
+        std::cout << "point clouds from different views for an object " 
+        << "stored in the database"
+        << std::endl 
+        << std::endl 
+        << desc 
+        << std::endl
+        << std::endl;
+        return 0;
       }
 
       po::notify(vm); // throws on error, so do after help in case
@@ -264,20 +274,18 @@ int main(int argc, char **argv) {
     // global variable
     g_debug = vm["debug"].as<bool>();
     if (!Update_database(argc, argv,
-			 vm["file-path-database"].as<std::string>(),
-			 vm["object-type"].as<std::string>(),
-			 vm["samples-half-circle"].as<int>())) {
+             vm["file-path-database"].as<std::string>(),
+             vm["object-type"].as<std::string>(),
+             vm["samples-half-circle"].as<int>())) {
       std::cout << "could not update database" << std::endl;
       return -1;
     }
 
   } catch (std::exception& e) {
     std::cerr << "Unhandled Exception reached the top of main: " << e.what()
-	      << ", application will now exit" << std::endl;
+          << ", application will now exit" << std::endl;
     return -1;
 
   }
-
   return 0;
-
 }
