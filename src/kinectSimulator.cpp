@@ -185,18 +185,6 @@ namespace render_kinect {
     // Extracting noise type and setting up noise generator
     if(noise_type_==GAUSSIAN)
       {
-	//Gaussian Noise
-//<<<<<<< HEAD
-//	float mean = 0.0;
-//    float std  = 0.03;
-//	noise_gen_ = new GaussianNoise( camera_.getWidth(), camera_.getHeight(), mean, std);
-//      } else if (noise_type_==PERLIN)
-//      {
-//    float scale = 0.4;
-//	noise_gen_ = new PerlinNoise( camera_.getWidth(), camera_.getHeight(), scale);
-//=======
-	//float mean = 0.0;
-	//float std  = 0.15;
 	noise_gen_ = new GaussianNoise( camera_.getWidth(), camera_.getHeight(), p_camera_info.noise_.mean_, p_camera_info.noise_.std_);
       } else if (noise_type_==PERLIN) 
       {
@@ -272,7 +260,7 @@ namespace render_kinect {
     }
 
     search_->tree.rebuild(search_->triangles.begin(), search_->triangles.end());
-    //search_->tree.accelerate_distance_queries();
+    search_->tree.accelerate_distance_queries();
   }
 
   // Function that intersects rays with the object model at current state.
@@ -291,11 +279,7 @@ namespace render_kinect {
 
     // allocate memory for depth map and labels
     depth_map = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_64FC1);
-//<<<<<<< HEAD
-//    depth_map.setTo(3.0);
-//=======
     depth_map.setTo(NAN);
-    //depth_map.setTo(0.0);
     labels = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_8UC3);
     labels.setTo(cv::Scalar(background_, background_, background_));
     cv::Mat disp(camera_.getHeight(), camera_.getWidth(), CV_32FC1);
