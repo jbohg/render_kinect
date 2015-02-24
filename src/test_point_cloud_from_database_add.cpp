@@ -239,69 +239,71 @@ bool Update_database(int argc,
 
     int file_cnt = 0;
     for (int i = 0; i < 2 * samples_per_half_circle; ++i) {
-        for (int j = 0; j < 2 * samples_per_half_circle; ++j) {
-	  camera_width.push_back(cam_info.width_);
-	  camera_height.push_back(cam_info.height_);
-	  camera_cx.push_back(cam_info.cx_);
-	  camera_cy.push_back(cam_info.cy_);
-	  camera_z_near.push_back(cam_info.z_near_);
-	  camera_z_far.push_back(cam_info.z_far_);
-	  camera_fx.push_back(cam_info.fx_);
-	  camera_fy.push_back(cam_info.fy_);
-	  // sample noisy transformation around initial one
-	  transform = Get_rotation(i,j,degree_of_rotation_per_step);
-	  transform.translation() = Eigen::Vector3d(0.0, 0.0, 1.0);
-	  transforms.clear();
-	  transforms.push_back(transform);
+      for (int j = 0; j < 2 * samples_per_half_circle; ++j) {
+        camera_width.push_back(cam_info.width_);
+        camera_height.push_back(cam_info.height_);
+        camera_cx.push_back(cam_info.cx_);
+        camera_cy.push_back(cam_info.cy_);
+        camera_z_near.push_back(cam_info.z_near_);
+        camera_z_far.push_back(cam_info.z_far_);
+        camera_fx.push_back(cam_info.fx_);
+        camera_fy.push_back(cam_info.fy_);
+        // sample noisy transformation around initial one
+        transform = Get_rotation(i,j,degree_of_rotation_per_step);
+        transform.translation() = Eigen::Vector3d(0.0, 0.0, 1.0);
+        transforms.clear();
+        transforms.push_back(transform);
 
-	  // give pose and object name to renderer
-	  Simulator.simulateMeasurement(transforms, depth_image);
-	  depth_images.push_back(depth_image);
+        // give pose and object name to renderer
+        Simulator.simulateMeasurement(transforms, depth_image);
+        depth_images.push_back(depth_image);
 	  
-	  if (g_debug) {
-	    std::stringstream unique_name;
-	    unique_name << object_type  << "_" << 
-	      std::setw(3) << std::setfill('0') << file_cnt;
-	    std::string name = TMP_DIR_PATH_OBJECT.string() + "/" + 
-	      unique_name.str() + ".png";
+        if (g_debug) {
+          std::stringstream unique_name;
+          unique_name << object_type  << "_" << 
+            std::setw(3) << std::setfill('0') << file_cnt;
+          std::string name = TMP_DIR_PATH_OBJECT.string() + "/" + 
+            unique_name.str() + ".png";
 	    
-	    if (!Store_png(depth_image,name)) {
-	      std::cout << "could not store depth image at " 
-                        << name << std::endl;
-	    } else {
-	      std::cout << "Stored PNG at " << name << std::endl;
-	    }
-	  }
-
-	  Convert_depth_to_point_cloud(depth_image, cam_info, point_cloud);
-	  if(point_cloud.points.size()==0) {
-	    std::cout << "could not convert pointcloud" << std::endl;
-	    return false;
-	  }
-	  
-	  point_clouds.push_back(point_cloud);
-	  
-	  // TODO end
-	  
-	  // we do not need to change the orientation
-	  // because the viewpoint orientation does never change
-	  object_positions.push_back(transform.translation().cast<float>());
-	  object_orientations.push_back(Eigen::Quaternionf(transform.rotation().cast<float>()));
-
-	  if (g_debug) {
-	    std::stringstream unique_name;
-	    unique_name << object_type  << "_" << 
-	      std::setw(3) << std::setfill('0') << file_cnt;
-	    std::string name = TMP_DIR_PATH_OBJECT.string() + "/" + 
-	      unique_name.str() + ".png";
-	    name = TMP_DIR_PATH_OBJECT.string() + "/" + unique_name.str() + ".pcd";
-	    if (!Store_point_cloud(point_cloud, name))
-	      std::cout << "could not store point cloud at" << name << std::endl;
-	    else 
-	      std::cout << "Stored point cloud at " << name << std::endl;
-	  }
-	  file_cnt++;
+          if (!Store_png(depth_image,name)) {
+            std::cout << "could not store depth image at " 
+                      << name << std::endl;
+          } else {
+            std::cout << "Stored PNG at " << name << std::endl;
+          }
         }
+
+        Convert_depth_to_point_cloud(depth_image, cam_info, point_cloud);
+        if(point_cloud.points.size()==0) {
+          std::cout << "could not convert pointcloud" << std::endl;
+          return false;
+        }
+	  
+        point_clouds.push_back(point_cloud);
+	  
+        // TODO end
+	  
+        // we do not need to change the orientation
+        // because the viewpoint orientation does never change
+        object_positions.push_back(transform.translation().cast<float>());
+        object_orientations.push_back(
+            Eigen::Quaternionf(transform.rotation().cast<float>()));
+
+        if (g_debug) {
+          std::stringstream unique_name;
+          unique_name << object_type  << "_" << 
+            std::setw(3) << std::setfill('0') << file_cnt;
+          std::string name = TMP_DIR_PATH_OBJECT.string() + "/" + 
+            unique_name.str() + ".png";
+          name = TMP_DIR_PATH_OBJECT.string() +
+            "/" + unique_name.str() + ".pcd";
+          if (!Store_point_cloud(point_cloud, name))
+            std::cout << "could not store point cloud at" << name << std::endl;
+          else 
+            std::cout << "Stored point cloud at " << name << std::endl;
+        }
+        file_cnt++;
+      }
     }
 
     /*
@@ -392,11 +394,19 @@ int main(int argc, char **argv) {
         namespace po = boost::program_options;
         po::options_description desc("Options");
         desc.add_options()
-            ("help,h", "Print help messages")
-            ("file-path-database", po::value<std::string>()->required(),"file path to the database")
-            ("object-type",po::value<std::string>()->required(), "object name")
-            ("samples-half-circle,s",po::value<int>()->required(), "number of samples on 180 degree")
-            ("debug,d",po::value<bool>()->default_value(false), "debug output");
+          ("help,h", "Print help messages")
+          ("file-path-database",
+           po::value<std::string>()->required(),
+           "file path to the database")
+          ("object-type",
+           po::value<std::string>()->required(),
+           "object name")
+          ("samples-half-circle,s",
+           po::value<int>()->required(),
+           "number of samples on 180 degree")
+          ("debug,d",
+           po::value<bool>()->default_value(false),
+           "debug output");
 
         po::variables_map vm;
         po::positional_options_description positionalOptions;
@@ -409,9 +419,10 @@ int main(int argc, char **argv) {
             */
             if (vm.count("help")) {
                 std::cout
-                    << "point clouds from different views for an object stored in the database"
-                    << std::endl << std::endl << desc << std::endl
-                    << std::endl;
+                  << "point clouds from different views for an "
+                  <<"object stored in the database"
+                  << std::endl << std::endl << desc << std::endl
+                  << std::endl;
                 return 0;
             }
 

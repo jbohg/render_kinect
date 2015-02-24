@@ -224,7 +224,7 @@ bool Update_database(
 int main(int argc, char **argv) {
 
   // initialize ros
-  //ros::init(argc, argv, "add_pointclouds_to_database");
+  ros::init(argc, argv, "add_pointclouds_to_database");
 
   try {
     std::string application_name = boost::filesystem::basename(argv[0]);
