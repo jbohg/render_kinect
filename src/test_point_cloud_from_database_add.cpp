@@ -145,7 +145,9 @@ bool Update_database(int argc,
         const std::string &object_type,
         int samples_per_half_circle) {
 
-  grasp_database::Grasp_database grasp_db(file_path_database);
+  grasp_database::Grasp_database grasp_db(
+      file_path_database,
+      grasp_database::Grasp_database::FLAG_READ_ONLY);
 
     // render type to distingiush between pure depth 
     // and openGL truncated pyramid style
@@ -170,12 +172,10 @@ bool Update_database(int argc,
         std::cout << "tmp file path object " << TMP_FILE_PATH_OBJECT
             << std::endl;
     }
-    /*
     if (!grasp_db.Store_object(object_type, TMP_FILE_PATH_OBJECT)) {
         std::cout << "could not store object " << object_type << std::endl;
         return false;
     }
-    */
 
     std::vector<std::string> object_paths;
     object_paths.push_back(TMP_FILE_PATH_OBJECT);
@@ -237,6 +237,8 @@ bool Update_database(int argc,
 
     std::vector<Eigen::Affine3d> transforms;
 
+    std::cout << "samples_per_half_circle "
+              << samples_per_half_circle << std::endl;
     int file_cnt = 0;
     for (int i = 0; i < 2 * samples_per_half_circle; ++i) {
       for (int j = 0; j < 2 * samples_per_half_circle; ++j) {
@@ -258,6 +260,12 @@ bool Update_database(int argc,
         Simulator.simulateMeasurement(transforms, depth_image);
         depth_images.push_back(depth_image);
 	  
+        Convert_depth_to_point_cloud(depth_image, cam_info, point_cloud);
+        if(point_cloud.points.size()==0) {
+          std::cout << "could not convert pointcloud" << std::endl;
+          continue;
+        }
+	  
         if (g_debug) {
           std::stringstream unique_name;
           unique_name << object_type  << "_" << 
@@ -272,13 +280,6 @@ bool Update_database(int argc,
             std::cout << "Stored PNG at " << name << std::endl;
           }
         }
-
-        Convert_depth_to_point_cloud(depth_image, cam_info, point_cloud);
-        if(point_cloud.points.size()==0) {
-          std::cout << "could not convert pointcloud" << std::endl;
-          return false;
-        }
-	  
         point_clouds.push_back(point_cloud);
 	  
         // TODO end
@@ -297,86 +298,15 @@ bool Update_database(int argc,
             unique_name.str() + ".png";
           name = TMP_DIR_PATH_OBJECT.string() +
             "/" + unique_name.str() + ".pcd";
-          if (!Store_point_cloud(point_cloud, name))
+          if (!Store_point_cloud(point_cloud, name)){
             std::cout << "could not store point cloud at" << name << std::endl;
-          else 
+          }else {
             std::cout << "Stored point cloud at " << name << std::endl;
+          }
         }
         file_cnt++;
       }
     }
-
-    /*
-    grasp_db.Set_object_pointcloud(object_type,
-				   render_type,
-				   object_positions,
-				   object_orientations,
-				   depth_images,
-				   camera_width,
-				   camera_height,
-				   camera_cx,
-				   camera_cy,
-				   camera_z_near,
-				   camera_z_far,
-				   camera_fx,
-				   camera_fy);
-    
-    Eigen::Vector3f tmp_object_position;
-    Eigen::Quaternionf tmp_object_orientation;
-    cv::Mat tmp_depth_image_stored;
-    pcl::PointCloud<pcl::PointXYZ> tmp_point_cloud_stored;
-
-    for(unsigned int i = 0; i < object_positions.size(); ++i)
-      {
-	grasp_db.Get_object_pointcloud(object_type,
-				       render_type,
-				       tmp_object_position,
-				       tmp_object_orientation,
-				       tmp_depth_image_stored,
-				       i);
-        assert(object_positions[i].x() == tmp_object_position.x());
-        assert(object_positions[i].y() == tmp_object_position.y());
-        assert(object_positions[i].z() == tmp_object_position.z());
-        assert(object_orientations[i].x() == tmp_object_orientation.x());
-        assert(object_orientations[i].y() == tmp_object_orientation.y());
-        assert(object_orientations[i].z() == tmp_object_orientation.z());
-        assert(object_orientations[i].w() == tmp_object_orientation.w());
-        cv::Mat tmp_depth_image_orig = depth_images[i];
-        assert(tmp_depth_image_orig.type()==tmp_depth_image_stored.type());
-        assert(tmp_depth_image_orig.total()==tmp_depth_image_stored.total());
-        assert(tmp_depth_image_orig.rows==tmp_depth_image_stored.rows);
-        assert(tmp_depth_image_orig.cols==tmp_depth_image_stored.cols);
-        int byte_offset = tmp_depth_image_orig.elemSize()/sizeof(uint8_t);
-        const unsigned char *data_orig = tmp_depth_image_orig.data;
-        const unsigned char *data_stored = tmp_depth_image_stored.data;
-        for(unsigned int j = 0; j< tmp_depth_image_orig.total()*byte_offset; ++j){
-            assert(*(data_orig+j) == *(data_stored+j));
-        }
-	
-	grasp_db.Get_object_pointcloud(object_type,
-				       render_type,
-				       tmp_object_position,
-				       tmp_object_orientation,
-				       tmp_point_cloud_stored,
-				       i);
-
-        assert(object_positions[i].x() == tmp_object_position.x());
-        assert(object_positions[i].y() == tmp_object_position.y());
-        assert(object_positions[i].z() == tmp_object_position.z());
-        assert(object_orientations[i].x() == tmp_object_orientation.x());
-        assert(object_orientations[i].y() == tmp_object_orientation.y());
-        assert(object_orientations[i].z() == tmp_object_orientation.z());
-        assert(object_orientations[i].w() == tmp_object_orientation.w());
-        assert(tmp_point_cloud_stored.points.size() == point_clouds[i].points.size());
-        for(pcl::PointCloud<pcl::PointXYZ>::iterator it = point_clouds[i].begin(), it_stored = tmp_point_cloud_stored.begin(); 
-                it != point_clouds[i].end(), it_stored != tmp_point_cloud_stored.end();
-                ++it, ++it_stored) {
-            assert(fabs(it->x - it_stored->x) < 1.0e-7);
-            assert(fabs(it->y - it_stored->y) < 1.0e-7);
-            assert(fabs(it->z - it_stored->z) < 1.0e-7);
-        }
-    }
-    */
 
     return true;
 }
@@ -384,7 +314,7 @@ bool Update_database(int argc,
 int main(int argc, char **argv) {
 
   // initialize ros
-  //ros::init(argc, argv, "test_add_depth_images_to_db");
+  ros::init(argc, argv, "test_add_depth_images_to_db");
 
     try {
         std::string application_name = boost::filesystem::basename(argv[0]);
