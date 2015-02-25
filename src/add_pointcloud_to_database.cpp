@@ -63,6 +63,40 @@ namespace{
 }
 
 
+bool Convert_depth_to_point_cloud( const cv::Mat &p_depth_im,
+				   const render_kinect::CameraInfo &cam_info, 
+				   pcl::PointCloud<pcl::PointXYZ> &point_cloud)
+{
+  unsigned w = cam_info.width_;
+  unsigned h = cam_info.height_;
+  float fx = cam_info.fx_;
+  float fy = cam_info.fy_;
+  float cx = cam_info.cx_;
+  float cy = cam_info.cy_;
+  float z_near = cam_info.z_near_;
+  float z_far  = cam_info.z_far_;
+  
+  point_cloud.points.clear();
+  point_cloud.points.reserve(w*h);
+  for (unsigned r = 0; r < h; ++r) {
+    const float* depth_map_i = p_depth_im.ptr<float>(r);
+    for (unsigned c = 0; c < w; ++c) {
+      float d = depth_map_i[c];
+      // the maximal depth value is 1.0
+      if (d > z_near && d == d && d < z_far) {
+	pcl::PointXYZ point;
+	point.z = d;
+	point.x = (point.z / fx) * (c - cx);
+	point.y = (point.z / fy) * (r - cy);
+	point_cloud.points.push_back(point);
+      }
+    }
+  }
+
+  point_cloud.width = point_cloud.points.size();
+  point_cloud.height = 1;
+  point_cloud.is_dense = false;
+}
 
 
 Eigen::Quaterniond Get_rotation(
@@ -83,11 +117,12 @@ Eigen::Quaterniond Get_rotation(
 }
 
 bool Update_database(
-        int argc,
-        char** argv,
-        const std::string &file_path_database,
-        const std::string &object_type,
-        int samples_per_half_circle) {
+    int argc,
+    char** argv,
+    const std::string &file_path_database,
+    const std::string &object_type,
+    int samples_per_half_circle,
+    float kinect_distance) {
 
   grasp_database::Grasp_database grasp_db(file_path_database);
 
@@ -188,12 +223,22 @@ bool Update_database(
       camera_fy.push_back(cam_info.fy_);
       // sample noisy transformation around initial one
       transform = Get_rotation(i,j,degree_of_rotation_per_step);
-      transform.translation() = Eigen::Vector3d(0.0, 0.0, 1.0);
+      transform.translation() = Eigen::Vector3d(0.0, 0.0, kinect_distance);
       transforms.clear();
       transforms.push_back(transform);
 
       // give pose and object name to renderer
       Simulator.simulateMeasurement(transforms, depth_image);
+
+      pcl::PointCloud<pcl::PointXYZ> point_cloud;
+      Convert_depth_to_point_cloud(depth_image, cam_info, point_cloud);
+      // if the pointcloud does not contain more than 30 points
+      // we skip this image
+      if(point_cloud.points.size()<30) {
+        std::cout << "could not convert pointcloud with at least "
+                  << "30 points so we skip this view" << std::endl;
+        continue;
+      }
       depth_images.push_back(depth_image);
             
       // we do not need to change the orientation
@@ -235,10 +280,21 @@ int main(int argc, char **argv) {
     po::options_description desc("Options");
     desc.add_options()
       ("help,h", "Print help messages")
-      ("file-path-database", po::value<std::string>()->required(),"file path to the database")
-      ("object-type",po::value<std::string>()->required(), "object name")
-      ("samples-half-circle,s",po::value<int>()->required(), "number of samples on 180 degree")
-      ("debug,d",po::value<bool>()->default_value(false), "debug output");
+      ("file-path-database",
+       po::value<std::string>()->required(),
+       "file path to the database")
+      ("object-type",
+       po::value<std::string>()->required(),
+       "object name")
+      ("samples-half-circle,s",
+       po::value<int>()->required(),
+       "number of samples on 180 degree")
+      ("kinect-distance,k",
+       po::value<float>()->required(),
+       "distance to the kinect sensor")
+      ("debug,d",
+       po::value<bool>()->default_value(false),
+       "debug output");
 
     po::variables_map vm;
     po::positional_options_description positionalOptions;
@@ -274,9 +330,10 @@ int main(int argc, char **argv) {
     // global variable
     g_debug = vm["debug"].as<bool>();
     if (!Update_database(argc, argv,
-             vm["file-path-database"].as<std::string>(),
-             vm["object-type"].as<std::string>(),
-             vm["samples-half-circle"].as<int>())) {
+                         vm["file-path-database"].as<std::string>(),
+                         vm["object-type"].as<std::string>(),
+                         vm["samples-half-circle"].as<int>(),
+                         vm["kinect-distance"].as<float>())) {
       std::cout << "could not update database" << std::endl;
       return -1;
     }
