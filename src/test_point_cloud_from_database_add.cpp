@@ -140,10 +140,11 @@ Eigen::Quaterniond Get_rotation(int step_x, int step_y,
 }
 
 bool Update_database(int argc,
-        char** argv,
-        const std::string &file_path_database,
-        const std::string &object_type,
-        int samples_per_half_circle) {
+                     char** argv,
+                     const std::string &file_path_database,
+                     const std::string &object_type,
+                     int samples_per_half_circle,
+                     float kinect_distance) {
 
   grasp_database::Grasp_database grasp_db(
       file_path_database,
@@ -179,6 +180,7 @@ bool Update_database(int argc,
 
     std::vector<std::string> object_paths;
     object_paths.push_back(TMP_FILE_PATH_OBJECT);
+    std::cout << "file path object " << TMP_FILE_PATH_OBJECT << std::endl;
 
     // get the path to the package
     std::string path = ros::package::getPath("render_kinect");
@@ -252,7 +254,8 @@ bool Update_database(int argc,
         camera_fy.push_back(cam_info.fy_);
         // sample noisy transformation around initial one
         transform = Get_rotation(i,j,degree_of_rotation_per_step);
-        transform.translation() = Eigen::Vector3d(0.0, 0.0, 1.0);
+        std::cout << "kinect distance " << kinect_distance << std::endl;
+        transform.translation() = Eigen::Vector3d(0.0, 0.0, kinect_distance);
         transforms.clear();
         transforms.push_back(transform);
 
@@ -260,11 +263,6 @@ bool Update_database(int argc,
         Simulator.simulateMeasurement(transforms, depth_image);
         depth_images.push_back(depth_image);
 	  
-        Convert_depth_to_point_cloud(depth_image, cam_info, point_cloud);
-        if(point_cloud.points.size()==0) {
-          std::cout << "could not convert pointcloud" << std::endl;
-          continue;
-        }
 	  
         if (g_debug) {
           std::stringstream unique_name;
@@ -280,7 +278,10 @@ bool Update_database(int argc,
             std::cout << "Stored PNG at " << name << std::endl;
           }
         }
-        point_clouds.push_back(point_cloud);
+        Convert_depth_to_point_cloud(depth_image, cam_info, point_cloud);
+        if(point_cloud.points.size()==0) {
+          std::cout << "could not convert pointcloud" << std::endl;
+        }
 	  
         // TODO end
 	  
@@ -334,6 +335,9 @@ int main(int argc, char **argv) {
           ("samples-half-circle,s",
            po::value<int>()->required(),
            "number of samples on 180 degree")
+          ("kinect-distance,k",
+           po::value<float>()->required(),
+           "distance to the kinect sensor")
           ("debug,d",
            po::value<bool>()->default_value(false),
            "debug output");
@@ -370,9 +374,10 @@ int main(int argc, char **argv) {
         // global variable
         g_debug = vm["debug"].as<bool>();
         if (!Update_database(argc, argv,
-                    vm["file-path-database"].as<std::string>(),
-                    vm["object-type"].as<std::string>(),
-                    vm["samples-half-circle"].as<int>())) {
+                             vm["file-path-database"].as<std::string>(),
+                             vm["object-type"].as<std::string>(),
+                             vm["samples-half-circle"].as<int>(),
+                             vm["kinect-distance"].as<float>())) {
             std::cout << "could not update database" << std::endl;
             return -1;
         }
