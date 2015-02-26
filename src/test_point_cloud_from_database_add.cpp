@@ -154,10 +154,10 @@ bool Update_database(int argc,
     // and openGL truncated pyramid style
     std::string render_type = "kinect_sim";
 
-    if(grasp_db.Has_object_pointclouds(object_type, render_type)){
-        std::cout << "already generated " << object_type << std::endl;
-        return true;
-    }
+    //if(grasp_db.Has_object_pointclouds(object_type, render_type)){
+      //std::cout << "already generated " << object_type << std::endl;
+        //return true;
+        //}
 
     // we need to store the object file as a file to be able to process it later
     const fs::path TMP_DIR_PATH_OBJECT("/tmp/object_renderer");
