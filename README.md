@@ -11,6 +11,10 @@ The simulated measurement shows typical artifacts of a kinect, e.g., occlusion b
 
 This implementation is simplified in that it accepts only a single rigid object as input.
 
+If you are using this code, please cite our work:
+
+**Robot Arm Pose Estimation through Pixel-Wise Part Classification.** *Jeannette Bohg, Javier Romero, Alexander Herzog and Stefan Schaal. Proceedings of the 2014 IEEE International Conference on Robotics and Automation. pp 3143--3150. 2014.*
+
 Requirements
 ----------
 The following libraries are required to compile the code:
