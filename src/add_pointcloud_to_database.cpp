@@ -52,7 +52,7 @@
 
 #include <Eigen/Core>
 
-namespace fs = boost::filesystem3;
+namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 // this is a global variable to have easy debugging
@@ -249,7 +249,7 @@ bool Update_database(
     }
   }
     
-  grasp_db.Set_object_pointcloud(object_type,
+  grasp_db.Set_object_pointclouds(object_type,
                  render_type,
                  object_positions,
                  object_orientations,

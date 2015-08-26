@@ -21,9 +21,9 @@ find_package(catkin REQUIRED
     tf_conversions
     eigen_conversions
     urdf 
-    orocos_kdl 
     kdl_parser
     grasp_database
+    cmake_modules
   )
 
 # There exist different versions of the assimp library for different 
@@ -63,6 +63,11 @@ if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_OMP")
 endif(OPENMP_FOUND)
 
+
+# Weird - orocos_kdl is a pure cmake package 
+# and cannot be found as a catkin component anymore
+find_package(orocos_kdl)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -86,7 +91,6 @@ catkin_package(
     tf_conversions
     eigen_conversions
     urdf
-    orocos_kdl
     kdl_parser
     grasp_database
   DEPENDS OpenCV eigen 

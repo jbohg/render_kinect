@@ -194,29 +194,54 @@ namespace rosread_utils {
     
     } else {
 
-      // parse the yaml calibration file
-      std::ifstream fin(calib_url.c_str());
-      if(fin.fail()){
-	ROS_ERROR("Could not read calibration file at %s", calib_url.c_str() );
+      try {
+	// parse the yaml calibration file
+	YAML::Node node = YAML::LoadFile(calib_url);
+	for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
+	  render_kinect::Matrix cam_mat;
+	  cam_mat.name = it->first.as<std::string>();
+	  const YAML::Node & value = it->second;
+	  value >> cam_mat;
+	  if( cam_mat.name == "camera_matrix_ir" )
+	    {
+	      fillCamMat(cam_mat, 
+			 cam_info.fx_, 
+			 cam_info.cx_, 
+			 cam_info.cy_);
+	      cam_info.fy_ = cam_info.fx_;
+	    }
+	}
+
+	/*
+	std::ifstream fin(calib_url.c_str());
+	if(fin.fail()){
+	  ROS_ERROR("Could not read calibration file at %s", calib_url.c_str() );
+	  exit(-1);
+	}
+	YAML::Parser parser(fin);
+	std::string out;
+	YAML::Node node;
+	parser.GetNextDocument(node);
+	for (YAML::Iterator i = node.begin(); i != node.end(); ++i) {
+	  render_kinect::Matrix cam_mat;
+	  const YAML::Node & key   = i.first();
+	  key >> out;
+	  cam_mat.name = out;
+	  const YAML::Node & value = i.second();
+	  value >> cam_mat;
+      
+	  if( out == "camera_matrix_ir" ) {
+	    fillCamMat(cam_mat, cam_info.fx_, cam_info.cx_, cam_info.cy_);
+	    cam_info.fy_ = cam_info.fx_;
+	  }
+	} // yaml parsing
+	*/
+      } catch(YAML::BadFile& e) {
+	std::cerr << "\33[32;40m" << e.what() << std::endl;
+	std::cerr << "\33[32;40m"  << "Check if the file " << calib_url << " exists." 
+		  << "\33[0m" << std::endl;
 	exit(-1);
       }
-      YAML::Parser parser(fin);
-      std::string out;
-      YAML::Node node;
-      parser.GetNextDocument(node);
-      for (YAML::Iterator i = node.begin(); i != node.end(); ++i) {
-	render_kinect::Matrix cam_mat;
-	const YAML::Node & key   = i.first();
-	key >> out;
-	cam_mat.name = out;
-	const YAML::Node & value = i.second();
-	value >> cam_mat;
-      
-	if( out == "camera_matrix_ir" ) {
-	  fillCamMat(cam_mat, cam_info.fx_, cam_info.cx_, cam_info.cy_);
-	  cam_info.fy_ = cam_info.fx_;
-	}
-      } // yaml parsing
     } // ifelse calibration file valid
   }
 

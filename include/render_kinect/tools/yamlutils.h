@@ -50,19 +50,24 @@ namespace render_kinect
 
   void operator >> (const YAML::Node& node, Matrix& cam_mat) 
   {
-    node["rows"] >> cam_mat.rows;
-    node["cols"] >> cam_mat.cols;
-    node["data"] >> cam_mat.data;
+    cam_mat.rows = node["rows"].as<int>();
+    cam_mat.cols = node["cols"].as<int>();
+    
+    cam_mat.data.clear();
+    for (std::size_t i=0;i<node["data"].size();i++)
+      {
+	cam_mat.data.push_back(node["data"][i].as<float>());
+      }
+    
   };
 
   void operator >> (const YAML::Node& node, std::vector<float>& data)
   {
     for(size_t i=0; i<node.size(); ++i)
       {
-	float val;
-	node[i] >> val;
-	data.push_back(val);
+	data.push_back(node[i].as<float>());
       }
+    
   }; 
 
   void fillCamMat( const Matrix &cam_mat, double &f, double &cx, double &cy)

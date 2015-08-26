@@ -42,7 +42,7 @@
 #include "assimp/assimp.h"
 #include "assimp/aiPostProcess.h"
 #include "assimp/aiScene.h"
-#elif defined HAVE_quantal // uses assimp3.0 
+#elif defined HAVE_quantal || defined HAVE_trusty// uses assimp3.0 
 #include "assimp/cimport.h"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"

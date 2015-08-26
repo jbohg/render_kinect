@@ -42,6 +42,7 @@
 #include <cv_bridge/cv_bridge.h>
 
 #include <visualization_msgs/Marker.h>
+#include <sensor_msgs/PointCloud2.h>
 
 // for publishing TF frames
 #include <tf/tf.h>

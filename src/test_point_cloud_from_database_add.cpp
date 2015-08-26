@@ -55,7 +55,7 @@
 
 #include <Eigen/Core>
 
-namespace fs = boost::filesystem3;
+namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 // this is a global variable to have easy debugging
