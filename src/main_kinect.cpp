@@ -113,6 +113,7 @@ int main(int argc, char **argv)
   // Flags for what output data should be generated
   bool store_depth = 1;
   bool store_label = 1;
+  bool store_flow = 1;
   bool store_pcd = 1;
 
   // Storage of random transform
@@ -124,7 +125,11 @@ int main(int argc, char **argv)
     Eigen::Affine3d current_tf = noise*transform;
     
     // give pose and object name to renderer
-    Simulator.simulateMeasurement(current_tf, store_depth, store_label, store_pcd);
+    Simulator.simulateMeasurement(current_tf,
+				  store_depth,
+				  store_label,
+				  store_flow,
+				  store_pcd);
     
   }
 

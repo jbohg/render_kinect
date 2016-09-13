@@ -77,7 +77,11 @@ namespace render_kinect {
       delete object_model_;
     }
 
-    void simulateMeasurement(const Eigen::Affine3d &new_tf, bool store_depth, bool store_label, bool store_pcd) {
+    void simulateMeasurement(const Eigen::Affine3d &new_tf,
+			     bool store_depth,
+			     bool store_label,
+			     bool store_flow,
+			     bool store_pcd) {
       countf++;
       
       // update old transform
@@ -85,7 +89,11 @@ namespace render_kinect {
 
       // simulate measurement of object and store in image, point cloud and labeled image
       cv::Mat p_result;
-      object_model_->intersect(transform_, point_cloud_, depth_im_, labels_);
+      object_model_->intersect(transform_,
+			       point_cloud_,
+			       depth_im_,
+			       labels_,
+			       flow_);
       
       // in case object is not in view, don't store any data
       // However, if background is used, there will be points in the point cloud
@@ -111,6 +119,14 @@ namespace render_kinect {
 	lD << out_path_ << "labels" << std::setw(3) << std::setfill('0')
 	   << countf << ".png";
 	cv::imwrite(lD.str().c_str(), labels_);
+      }
+
+      // store on disk
+      if (store_flow) {
+	std::stringstream lD;
+	lD << out_path_ << "flow" << std::setw(3) << std::setfill('0')
+	   << countf << ".png";
+	cv::imwrite(lD.str().c_str(), flow_);
       }
 
       //convert point cloud to pcl/pcd format
@@ -145,7 +161,7 @@ namespace render_kinect {
     }
 
     KinectSimulator *object_model_;
-    cv::Mat depth_im_, scaled_im_, point_cloud_, labels_;
+    cv::Mat depth_im_, scaled_im_, point_cloud_, labels_, flow_;
     std::string out_path_;
     Eigen::Affine3d transform_; 
 

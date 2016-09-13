@@ -74,6 +74,15 @@
 
 namespace render_kinect {
 
+  // utility for flow color coding
+  /*
+  void getFlowColor(const cv::Point2f vel, cv::Scalar &color)
+  {
+    cv::cartToPolar
+  }
+  */
+
+  
   // Constructor
   KinectSimulator::KinectSimulator(const CameraInfo &p_camera_info,
 				   std::string object_name,
@@ -179,7 +188,8 @@ namespace render_kinect {
   void KinectSimulator::intersect(const Eigen::Affine3d &p_transform, 
 				  cv::Mat &point_cloud,
 				  cv::Mat &depth_map,
-				  cv::Mat &labels) 
+				  cv::Mat &labels,
+				  cv::Mat &flow) 
   {
     // Note that for this simple example case of one rigid object, the tree would actually not needed 
     // to be updated. Instead the camera could be moved and rays could be casted from these 
@@ -189,11 +199,23 @@ namespace render_kinect {
     updateObjectPoses(p_transform);
     updateTree();
 
-    // allocate memory for depth map and labels
+    // allocate memory for depth map and labels, flow vectors
     depth_map = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_64FC1);
     depth_map.setTo(0.0);
+
     labels = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_8UC3);
     labels.setTo(cv::Scalar(background_, background_, background_));
+
+    
+    flow = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_8UC3);
+    flow.setTo(cv::Scalar(background_, background_, background_));
+    horizontal_ = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_64FC1);
+    horizontal_.setTo(0.0);
+    vertical_ = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_64FC1);
+    vertical_.setTo(0.0);
+    hsv_ = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_8UC3);
+    hsv_.setTo(cv::Scalar(0,0,0));
+    
     cv::Mat disp(camera_.getHeight(), camera_.getWidth(), CV_32FC1);
     disp.setTo(invalid_disp_);
     // go through the whole image and create a ray from a pixel -> dir    
@@ -271,8 +293,17 @@ namespace render_kinect {
 		if(abs(diff)<0.0001) {
 		  // get pixel position of ray in right image
 		  float tx_fx = camera_.getTx();
+		  // point with respect to right camera frame
 		  cv::Point3d point_right( min_p.x()-tx_fx, min_p.y(), min_p.z());
 		  cv::Point2f right_pixel = camera_.project3dToPixel(point_right);
+		  // compute 2D velocity
+		  cv::Point2f velocity = right_pixel - cv::Point2f(c,r);
+		  // fill horizontal and vertical velocity
+		  unsigned char* horiz_i = horizontal_.ptr<unsigned char>(r);
+		  horiz_i[(int)c] = velocity.x;
+		  unsigned char* verti_i = vertical_.ptr<unsigned char>(r);
+		  verti_i[(int)c] = velocity.y;
+		  
 		  // quantize right_pixel
 		  right_pixel.x = round(right_pixel.x*8.0)/8.0;
 		  right_pixel.y = round(right_pixel.y*8.0)/8.0;
@@ -297,6 +328,22 @@ namespace render_kinect {
     } // camera_.getWidth()
 
 
+    // compute flow image
+    cv::Mat magnitude, angle;
+    cv::Mat sat = cv::Mat(camera_.getHeight(), camera_.getWidth(), CV_64FC1);
+    sat.setTo(0.0);
+    cv::cartToPolar(horizontal_, vertical_, magnitude, angle);
+    angle = angle*180.0/3.41/2.0;
+    cv::normalize(magnitude, magnitude,0,255,cv::NORM_MINMAX);
+    std::vector<cv::Mat> channels;
+    channels.push_back(angle);
+    channels.push_back(sat);
+    channels.push_back(magnitude);
+ 
+    /// Merge the three channels
+    cv::merge(channels, hsv_);
+    cv::cvtColor(hsv_, flow, cv::COLOR_HSV2BGR);
+    
     // Filter disparity image and add noise 
     cv::Mat out_disp, out_labels;
     filterDisp(disp, labels, out_disp, out_labels);

@@ -48,7 +48,7 @@ if(PCL_FOUND)
 endif(PCL_FOUND)
 
 
-find_package(OpenCV QUIET REQUIRED COMPONENTS core highgui)
+find_package(OpenCV QUIET REQUIRED COMPONENTS core highgui imgproc)
 if(OpenCV_FOUND)
   message("Found OpenCV")
   include_directories(${OpenCV_INCLUDE_DIRS})

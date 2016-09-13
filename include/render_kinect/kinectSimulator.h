@@ -82,6 +82,11 @@ namespace render_kinect
     static const int size_filt_ = 9;
     cv::Mat weights_;
     cv::Mat fill_weights_;
+
+    // container for velocity vectors
+    cv::Mat hsv_;
+    cv::Mat horizontal_;
+    cv::Mat vertical_;
     
     // noise generator
     Noise* noise_gen_;
@@ -105,7 +110,8 @@ namespace render_kinect
     void intersect(const Eigen::Affine3d &p_transform,//tf::Transform &p_transform, 
 		   cv::Mat &point_cloud,
 		   cv::Mat &depth_map,
-		   cv::Mat &labels);
+		   cv::Mat &labels,
+		   cv::Mat &flow);
 
     KinectSimulator(const CameraInfo &p_camera_info,
 		    std::string object_name,
