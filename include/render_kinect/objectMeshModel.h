@@ -38,15 +38,16 @@
 #ifndef _OBJECT_MESH_MODEL_
 #define _OBJECT_MESH_MODEL_
 
-#ifdef HAVE_precise
+/*#ifdef HAVE_precise
 #include "assimp/assimp.h"
 #include "assimp/aiPostProcess.h"
 #include "assimp/aiScene.h"
-#elif defined HAVE_quantal // uses assimp3.0 
+#elif defined HAVE_quantal // uses assimp3.0
+*/ 
 #include "assimp/cimport.h"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
-#endif
+//#endif
 
 #include <Eigen/Dense>
 #include <Eigen/Core>

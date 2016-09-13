@@ -19,8 +19,14 @@ execute_process(COMMAND lsb_release -sc
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_${_distro}")
 message("Compiling for Ubuntu version ${_distro}")
 
-find_package(Eigen REQUIRED)
-include_directories(${EIGEN_INCLUDE_DIR})
+find_package(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+link_directories(${Boost_LIBRARIES})
+
+#find_package(Eigen REQUIRED)
+#include_directories(${EIGEN_INCLUDE_DIR})
+
+INCLUDE_DIRECTORIES ( "/usr/local/include/eigen3/" )
 
 find_package(OpenMP QUIET)
 if(OPENMP_FOUND)
@@ -30,7 +36,7 @@ if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_OMP")
 endif(OPENMP_FOUND)
 
-find_package(PCL 1.3 QUIET REQUIRED COMPONENTS io)
+find_package(PCL 1.3 QUIET COMPONENTS io)
 if(PCL_FOUND)
   message("Found PCL")
   include_directories(${PCL_INCLUDE_DIRS})
@@ -41,6 +47,7 @@ if(PCL_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -DHAVE_PCL")
 endif(PCL_FOUND)
 
+
 find_package(OpenCV QUIET REQUIRED COMPONENTS core highgui)
 if(OpenCV_FOUND)
   message("Found OpenCV")
@@ -48,9 +55,10 @@ if(OpenCV_FOUND)
   set(LIBS ${LIBS} ${OpenCV_LIBS})
 endif(OpenCV_FOUND)
 
+link_directories(/usr/local/lib/)
 
 add_library(${PROJECT_NAME} src/kinectSimulator.cpp src/noiseutils.cpp)
-target_link_libraries(${PROJECT_NAME} assimp CGAL noise ${LIBS}) 
+target_link_libraries(${PROJECT_NAME} CGAL assimp noise ${LIBS} boost_system) 
 
 add_executable(render_object src/main_kinect.cpp)
 target_link_libraries(render_object ${PROJECT_NAME})
