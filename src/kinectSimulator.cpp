@@ -316,18 +316,33 @@ namespace render_kinect {
     } // camera_.getWidth()
 
 
+    // print min max of horizontal and vertical images
+    double min, max;
+    cv::minMaxLoc(horizontal_, &min, &max);
+    std::cout << "HORIZONTAL: Minimum " << min << " Maximum " << max << std::endl;
+
+    cv::minMaxLoc(vertical_, &min, &max);
+    std::cout << "VERTICAL: Minimum " << min << " Maximum " << max << std::endl;
+        
     // compute flow image
     cv::Mat magnitude, angle;
     cv::Mat value = cv::Mat(camera_.getHeight(), camera_.getWidth(),CV_32FC1);
     value.setTo(255.0);
     cv::cartToPolar(horizontal_, vertical_, magnitude, angle);
+    cv::minMaxLoc(angle, &min, &max);
+    std::cout << "ANGLE: Minimum " << min << " Maximum " << max << std::endl;
+    cv::minMaxLoc(magnitude, &min, &max);
+    std::cout << "MAGNITUDE: Minimum " << min << " Maximum " << max << std::endl;
+    
     angle = angle*180.0/3.41/2.0;
     cv::normalize(magnitude, magnitude,0,255,cv::NORM_MINMAX);
-
+    //magnitude.setTo(255.0); 
+    
     std::vector<cv::Mat> channels;
     channels.push_back(angle); // hue
-    channels.push_back(magnitude); // saturation
     channels.push_back(value); // value (constant)
+    channels.push_back(magnitude); // saturation
+
     
     /// Merge the three channels
     cv::merge(channels, hsv_);

@@ -27,7 +27,7 @@
 #include <string.h>
 #include <string>
 
-#include <noise/noise.h>
+#include <libnoise/noise.h>
 
 using namespace noise;
 

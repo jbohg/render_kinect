@@ -93,7 +93,7 @@ int main(int argc, char **argv)
   cam_info.fx_ = 580.0;
   cam_info.fy_ = 580.0;
   // baseline between IR projector and IR camera
-  cam_info.tx_ = 0.075;
+  cam_info.tx_ = 0.175;
 
   // Type of noise
   //  cam_info.noise_ = render_kinect::GAUSSIAN;
