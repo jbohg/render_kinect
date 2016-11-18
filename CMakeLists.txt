@@ -19,8 +19,8 @@ execute_process(COMMAND lsb_release -sc
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_${_distro}")
 message("Compiling for Ubuntu version ${_distro}")
 
-find_package(Eigen REQUIRED)
-include_directories(${EIGEN_INCLUDE_DIR})
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
 
 find_package(OpenMP QUIET)
 if(OPENMP_FOUND)
