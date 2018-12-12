@@ -67,10 +67,10 @@ namespace render_kinect
     TreeAndTri* search_;
 
     Camera camera_;
-    static const float invalid_disp_ = 99999999.9;
-    static const float window_inlier_distance_ = 0.1;
-    //static constexpr float invalid_disp_ = 99999999.9;
-    //static constexpr float window_inlier_distance_ = 0.1;
+    //static const float invalid_disp_ = 99999999.9;
+    //static const float window_inlier_distance_ = 0.1;
+    static constexpr float invalid_disp_ = 99999999.9;
+    static constexpr float window_inlier_distance_ = 0.1;
 
     void initRobot();
     void updateObjectPoses(const Eigen::Affine3d &p_transform);

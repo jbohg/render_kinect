@@ -45,6 +45,7 @@ find_package(OpenCV QUIET REQUIRED COMPONENTS core highgui)
 if(OpenCV_FOUND)
   message("Found OpenCV")
   include_directories(${OpenCV_INCLUDE_DIRS})
+  set(OpenCV_LIBS ${OpenCV_LIBS} opencv_imgcodecs)
   set(LIBS ${LIBS} ${OpenCV_LIBS})
 endif(OpenCV_FOUND)
 
