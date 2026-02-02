@@ -22,8 +22,8 @@
 
 #include <fstream>
 
-#include <libnoise/interp.h>
-#include <libnoise/mathconsts.h>
+#include <noise/interp.h>
+#include <noise/mathconsts.h>
 
 #include <render_kinect/noiseutils.h>
 

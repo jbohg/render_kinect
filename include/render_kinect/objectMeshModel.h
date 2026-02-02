@@ -55,13 +55,12 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 
-#define CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES 1
-#include <CGAL/AABB_tree.h>
-#include <CGAL/AABB_traits.h>
-#include <CGAL/AABB_triangle_primitive.h>
-#include <CGAL/centroid.h>
+// CGAL 6.x compatible headers
 #include <CGAL/Simple_cartesian.h>
-
+#include <CGAL/AABB_tree.h>
+#include <CGAL/AABB_traits_3.h>
+#include <CGAL/AABB_triangle_primitive_3.h>
+#include <CGAL/centroid.h>
 #include <CGAL/intersections.h>
 #include <CGAL/Bbox_3.h>
 
@@ -73,12 +72,13 @@ typedef K::Triangle_3 Triangle;
 typedef K::Ray_3 Ray;
 
 typedef std::vector<Triangle>::iterator Iterator;
-typedef CGAL::AABB_triangle_primitive<K,Iterator> Primitive;
+typedef CGAL::AABB_triangle_primitive_3<K, Iterator> Primitive;
 
-typedef CGAL::AABB_traits<K, Primitive> AABB_triangle_traits;
+typedef CGAL::AABB_traits_3<K, Primitive> AABB_triangle_traits;
 typedef AABB_triangle_traits::Point_and_primitive_id Point_and_Primitive_id;
 typedef CGAL::AABB_tree<AABB_triangle_traits> Tree;
-typedef Tree::Object_and_primitive_id Object_and_Primitive_id;
+// CGAL 6.x: Intersection results use std::variant instead of CGAL::Object
+typedef Tree::Intersection_and_primitive_id<Ray>::Type Ray_intersection;
 
 struct TreeAndTri {
   std::vector<K::Triangle_3> triangles;

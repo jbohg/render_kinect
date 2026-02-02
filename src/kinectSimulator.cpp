@@ -61,9 +61,10 @@
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/AABB_tree.h>
-#include <CGAL/AABB_traits.h>
+#include <CGAL/AABB_traits_3.h>
 #include <CGAL/Polyhedron_3.h>
-#include <CGAL/AABB_polyhedron_triangle_primitive.h>
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
+#include <variant>  // For std::get_if (CGAL 6.x)
 
 #ifdef HAVE_OPENMP
 #include <omp.h>
@@ -196,9 +197,8 @@ namespace render_kinect {
     labels.setTo(cv::Scalar(background_, background_, background_));
     cv::Mat disp(camera_.getHeight(), camera_.getWidth(), CV_32FC1);
     disp.setTo(invalid_disp_);
-    // go through the whole image and create a ray from a pixel -> dir    
+    // go through the whole image and create a ray from a pixel -> dir
     std::vector<cv::Point3f> vec;
-    int n_occluded = 0;
     vec.reserve(camera_.getHeight() * camera_.getWidth());
 
 #if HAVE_OMP
@@ -211,56 +211,66 @@ namespace render_kinect {
 	// check if there is any intersection of the ray with an object by do_intersect
 	uint32_t reach_mesh = search_->tree.do_intersect(Ray(Point(0,0,0), Vector(ray.x, ray.y, ray.z)));
 	if (reach_mesh){
-	  // if there is one or many intersections, order them according to distance to camera 
+	  // if there is one or many intersections, order them according to distance to camera
 	  // and continue computation with closest
-	  std::list<Object_and_Primitive_id> intersections;
-	  search_->tree.all_intersections(Ray(Point(0,0,0),Vector( ray.x, ray.y, ray.z)), 
+	  std::list<Ray_intersection> intersections;
+	  search_->tree.all_intersections(Ray(Point(0,0,0),Vector( ray.x, ray.y, ray.z)),
 					  std::back_inserter(intersections));
 	  if(!intersections.empty()) {
-	    std::list<Object_and_Primitive_id>::const_iterator it;
 	    Point min_p(0,0,0);
 	    double min_dist = std::numeric_limits<double>::infinity();
 	    double min_id = -1;
-	    for (it = intersections.begin(); it != intersections.end(); ++it) {
-	      CGAL::Object object = it->first;
-	      std::size_t triangle_id = std::distance(search_->triangles.begin(),it->second); 
-	      assert( search_->triangles[triangle_id] == *(it->second) ); 
-	      Point point;
-	      if(CGAL::assign(point,object)){
-		double dist = abs(point);
+	    bool found_left_point = false;
+	    for (const auto& inter : intersections) {
+	      std::size_t triangle_id = std::distance(search_->triangles.begin(), inter.second);
+	      assert( search_->triangles[triangle_id] == *(inter.second) );
+	      // CGAL 6.x: intersection is std::variant<Point, Segment>
+	      if (const Point* p = std::get_if<Point>(&(inter.first))) {
+		double dist = abs(*p);
 		if(dist<min_dist){
 		  // distance to point
 		  min_dist = dist;
 		  // intersection coordinates
-		  min_p = point;
+		  min_p = *p;
 		  // label of the intersected object (will be zero for this simple case)
 		  min_id = triangle_id;
+		  found_left_point = true;
 		}
-	      } else {
-		std::cout << "Intersection object is NOT a point ?????" << std::endl;
 	      }
 	    }
 
+	    // Skip if no valid Point intersection was found from left camera
+	    if (!found_left_point) {
+	      continue;
+	    }
+
 	    // check if point is also visible in second camera by casting a ray to this point
-	    uint32_t reach_mesh_r = search_->tree.do_intersect(Ray(Point(camera_.getTx(),0,0), 
+	    uint32_t reach_mesh_r = search_->tree.do_intersect(Ray(Point(camera_.getTx(),0,0),
 								   Point(min_p.x(), min_p.y(), min_p.z())));
 	    if(reach_mesh_r) {
 	      // if there are intersections, get the closest to the camera
-	      std::list<Object_and_Primitive_id> intersections_r;
-	      search_->tree.all_intersections(Ray(Point(camera_.getTx(),0,0), Point(min_p.x(), min_p.y(), min_p.z())), 
+	      std::list<Ray_intersection> intersections_r;
+	      search_->tree.all_intersections(Ray(Point(camera_.getTx(),0,0), Point(min_p.x(), min_p.y(), min_p.z())),
 					      std::back_inserter(intersections_r));
 	      if(!intersections_r.empty()) {
-		std::list<Object_and_Primitive_id>::const_iterator id;
 		Point min_p_r(min_p.x(), min_p.y(), min_p.z());
 		double min_dist_r = std::numeric_limits<double>::infinity();
-		for (id = intersections_r.begin(); id != intersections_r.end(); ++id) {
-		  CGAL::Object object = id->first;
-		  Point point;
-		  if(CGAL::assign(point,object)){
-		    double dist = abs(point);
-		    if(dist<min_dist_r){
+		// Right camera is at (tx, 0, 0)
+		Point right_cam(camera_.getTx(), 0, 0);
+		// Compute max valid distance (distance from right cam to target point)
+		Point diff_to_target(min_p.x() - right_cam.x(), min_p.y() - right_cam.y(), min_p.z() - right_cam.z());
+		double max_valid_dist = abs(diff_to_target) + 0.001; // small epsilon for numerical precision
+
+		for (const auto& inter_r : intersections_r) {
+		  // CGAL 6.x: intersection is std::variant<Point, Segment>
+		  if (const Point* p = std::get_if<Point>(&(inter_r.first))) {
+		    // Compute distance from right camera to intersection point
+		    Point diff(p->x() - right_cam.x(), p->y() - right_cam.y(), p->z() - right_cam.z());
+		    double dist = abs(diff);
+		    // Only consider intersections that are closer than or at the target point
+		    if(dist < max_valid_dist && dist < min_dist_r){
 		      min_dist_r = dist;
-		      min_p_r = point;
+		      min_p_r = *p;
 		    }
 		  }
 		}
@@ -286,9 +296,8 @@ namespace render_kinect {
 		  for(int col=0; col<3; ++col){
 		    labels_i[(int)c*3+col] = color(col);
 		  }
-		} else {
-		  n_occluded++;
 		}
+		// else: point is occluded in right camera view
 	      } // if there are non-zero intersections from right camera
 	    } // if mesh reached from right camera
 	  } // if non-zero intersections
